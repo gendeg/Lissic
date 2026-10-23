@@ -1,0 +1,230 @@
+using System.Buffers;
+using System.Text;
+using Lissic.Filters.BuiltIn;
+
+namespace Lissic.Tests.Filters;
+
+public class BuiltInFiltersTests
+{
+	[Theory]
+	[InlineData("hello", "!", "hello!")]
+	[InlineData("", "tail", "tail")]
+	[InlineData("世界", "!", "世界!")]
+	public void Append_AddsTextAfterInput(string input, string text, string expected) =>
+		Assert.Equal(expected, Apply(input, new AppendFilter(text)));
+
+	[Theory]
+	[InlineData("hello", "pre-", "pre-hello")]
+	[InlineData("", "head", "head")]
+	[InlineData("世界", "前", "前世界")]
+	public void Prepend_AddsTextBeforeInput(string input, string text, string expected) =>
+		Assert.Equal(expected, Apply(input, new PrependFilter(text)));
+
+	[Theory]
+	[InlineData("hello world", "Hello world")]
+	[InlineData("...hello", "...Hello")]
+	[InlineData("Already Upper", "Already Upper")]
+	[InlineData("123", "123")]
+	[InlineData("éCOLE", "ÉCOLE")]
+	[InlineData("", "")]
+	public void Capitalize_UppercasesFirstLetter(string input, string expected) =>
+		Assert.Equal(expected, Apply(input, new CapitalizeFilter()));
+
+	[Theory]
+	[InlineData("HELLO World", "hello world")]
+	[InlineData("Already lower", "already lower")]
+	[InlineData("123ABC", "123abc")]
+	[InlineData("ÉCOLE", "école")]
+	[InlineData("", "")]
+	public void Lower_ConvertsTextToLowercase(string input, string expected) =>
+		Assert.Equal(expected, Apply(input, new LowerFilter()));
+
+	[Theory]
+	[InlineData("hello WORLD", "HELLO WORLD")]
+	[InlineData("Already Upper", "ALREADY UPPER")]
+	[InlineData("123abc", "123ABC")]
+	[InlineData("école", "ÉCOLE")]
+	[InlineData("", "")]
+	public void Upper_ConvertsTextToUppercase(string input, string expected) =>
+		Assert.Equal(expected, Apply(input, new UpperFilter()));
+
+	[Theory]
+	[InlineData("one two two", "two", "one  ")]
+	[InlineData("aaaa", "aa", "")]
+	[InlineData("hello", "x", "hello")]
+	[InlineData("世界世界", "世界", "")]
+	[InlineData("", "x", "")]
+	public void Remove_RemovesEveryOccurrence(string input, string needle, string expected) =>
+		Assert.Equal(expected, Apply(input, new RemoveFilter(needle)));
+
+	[Theory]
+	[InlineData("one two two", "two", "one  two")]
+	[InlineData("aaaa", "aa", "aa")]
+	[InlineData("hello", "x", "hello")]
+	[InlineData("same", "same", "")]
+	[InlineData("", "x", "")]
+	public void RemoveFirst_RemovesOnlyTheFirstOccurrence(string input, string needle, string expected) =>
+		Assert.Equal(expected, Apply(input, new RemoveFirstFilter(needle)));
+
+	[Theory]
+	[InlineData("one two two", "two", "one two ")]
+	[InlineData("aaaa", "aa", "aa")]
+	[InlineData("hello", "x", "hello")]
+	[InlineData("same", "same", "")]
+	[InlineData("", "x", "")]
+	public void RemoveLast_RemovesOnlyTheLastOccurrence(string input, string needle, string expected) =>
+		Assert.Equal(expected, Apply(input, new RemoveLastFilter(needle)));
+
+	[Theory]
+	[InlineData("one two two", "two", "X", "one X X")]
+	[InlineData("aaaa", "aa", "b", "bb")]
+	[InlineData("hello", "x", "!", "hello")]
+	[InlineData("abc", "b", "", "ac")]
+	[InlineData("", "x", "!", "")]
+	public void Replace_ReplacesEveryOccurrence(string input, string needle, string replacement, string expected) =>
+		Assert.Equal(expected, Apply(input, new ReplaceFilter(needle, replacement)));
+
+	[Theory]
+	[InlineData("one two two", "two", "X", "one X two")]
+	[InlineData("aaaa", "aa", "b", "baa")]
+	[InlineData("hello", "x", "!", "hello")]
+	[InlineData("abc", "b", "", "ac")]
+	[InlineData("", "x", "!", "")]
+	public void ReplaceFirst_ReplacesOnlyTheFirstOccurrence(string input, string needle, string replacement, string expected) =>
+		Assert.Equal(expected, Apply(input, new ReplaceFirstFilter(needle, replacement)));
+
+	[Theory]
+	[InlineData("one two two", "two", "X", "one two X")]
+	[InlineData("aaaa", "aa", "b", "aab")]
+	[InlineData("hello", "x", "!", "hello")]
+	[InlineData("abc", "b", "", "ac")]
+	[InlineData("", "x", "!", "")]
+	public void ReplaceLast_ReplacesOnlyTheLastOccurrence(string input, string needle, string replacement, string expected) =>
+		Assert.Equal(expected, Apply(input, new ReplaceLastFilter(needle, replacement)));
+
+	[Theory]
+	[InlineData("abc", "1", "abc")]
+	[InlineData("x", "3", "xxx")]
+	[InlineData("abc", "0", "")]
+	[InlineData("abc", "-2", "")]
+	[InlineData("", "3", "")]
+	public void Repeat_RepeatsInputTheRequestedNumberOfTimes(string input, string count, string expected) =>
+		Assert.Equal(expected, Apply(input, new RepeatFilter(count)));
+
+	[Theory]
+	[InlineData("abcdef", "2", "3", "cde")]
+	[InlineData("abcdef", "3", "3", "def")]
+	[InlineData("abcdef", "6", "2", "")]
+    [InlineData("abcdef", "8", "1", "")]
+	[InlineData("abcdef", "2", "0", "")]
+	[InlineData("abcdef", "-2", "4", "ef")]
+    [InlineData("abcdef", "-5", "4", "bcde")]
+    [InlineData("abcdef", "-10", "4", "abcd")]
+    [InlineData("世界🙂世界", "1", "3", "界🙂世")]
+    [InlineData("世界🙂世界", "-4", "1", "界")]
+	[InlineData("", "0", "0", "")]
+	public void Slice_ReturnsTheRequestedByteRange(string input, string start, string length, string expected) =>
+		Assert.Equal(expected, Apply(input, new SliceFilter(start, length)));
+
+	[Theory]
+	[InlineData("  hello \t", "hello")]
+	[InlineData("\n\t", "")]
+	[InlineData(" hello", "hello")]
+	[InlineData("hello ", "hello")]
+	[InlineData("hello", "hello")]
+	[InlineData("　hello ", "hello")]
+	[InlineData("", "")]
+	public void Trim_RemovesWhitespaceFromBothEnds(string input, string expected) =>
+		Assert.Equal(expected, Apply(input, new TrimFilter()));
+
+	[Theory]
+	[InlineData("hello \t", "hello")]
+	[InlineData(" \n", "")]
+	[InlineData(" hello", " hello")]
+	[InlineData("hello", "hello")]
+	[InlineData("hello ", "hello")]
+	[InlineData("", "")]
+	public void TrimEnd_RemovesWhitespaceFromTheEndOnly(string input, string expected) =>
+		Assert.Equal(expected, Apply(input, new TrimEndFilter()));
+
+	[Theory]
+	[InlineData(" \thello", "hello")]
+	[InlineData("\n ", "")]
+	[InlineData("hello ", "hello ")]
+	[InlineData("hello", "hello")]
+	[InlineData(" hello", "hello")]
+	[InlineData("", "")]
+	public void TrimStart_RemovesWhitespaceFromTheStartOnly(string input, string expected) =>
+		Assert.Equal(expected, Apply(input, new TrimStartFilter()));
+
+	[Theory]
+	[InlineData("abcdef", "3", "abc")]
+	[InlineData("abcdef", "6", "abcdef")]
+	[InlineData("abcdef", "0", "")]
+	[InlineData("abcdef", "10", "abcdef")]
+    [InlineData("世界🙂世界", "3", "世界🙂")]
+    [InlineData("世界🙂世界", "-3", "世界")]
+    [InlineData("abcdef", "-10", "")]
+	[InlineData("", "3", "")]
+	public void Truncate_LimitsInputToTheMaximumLength(string input, string maxLength, string expected) =>
+		Assert.Equal(expected, Apply(input, new TruncateFilter(maxLength)));
+
+	[Fact]
+	public void BuiltInFilters_DoNotAllocateDuringApply()
+	{
+		ITemplateFilter[] filters =
+		[
+			new AppendFilter("!"),
+			new CapitalizeFilter(),
+			new LowerFilter(),
+			new PrependFilter("!"),
+			new RemoveFilter("a"),
+			new RemoveFirstFilter("a"),
+			new RemoveLastFilter("a"),
+			new RepeatFilter("3"),
+			new ReplaceFilter("a", "b"),
+			new ReplaceFirstFilter("a", "b"),
+			new ReplaceLastFilter("a", "b"),
+			new SliceFilter("0", "8"),
+			new TrimFilter(),
+			new TrimEndFilter(),
+			new TrimStartFilter(),
+			new TruncateFilter("8"),
+			new UpperFilter()
+		];
+		byte[] input = Encoding.UTF8.GetBytes(" alPha beta ");
+		ArrayBufferWriter<byte>[] outputs = filters.Select(_ => new ArrayBufferWriter<byte>(256)).ToArray();
+		const int iterations = 100;
+
+		for (int filterIndex = 0; filterIndex < filters.Length; filterIndex++)
+		{
+			for (int iteration = 0; iteration < 10; iteration++)
+			{
+				outputs[filterIndex].Clear();
+				filters[filterIndex].Apply(input, outputs[filterIndex]);
+			}
+		}
+
+		for (int filterIndex = 0; filterIndex < filters.Length; filterIndex++)
+		{
+			string filterName = filters[filterIndex].GetType().Name;
+			long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+
+			for (int iteration = 0; iteration < iterations; iteration++)
+			{
+				outputs[filterIndex].Clear();
+				filters[filterIndex].Apply(input, outputs[filterIndex]);
+			}
+
+			long allocated = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+			Assert.True(allocated == 0, $"{filterName} allocated {allocated} bytes during Apply.");
+		}
+	}
+
+	private static string Apply(string input, ITemplateFilter filter)
+	{
+		ArrayBufferWriter<byte> output = new();
+		filter.Apply(Encoding.UTF8.GetBytes(input), output);
+		return Encoding.UTF8.GetString(output.WrittenSpan);
+	}
+}

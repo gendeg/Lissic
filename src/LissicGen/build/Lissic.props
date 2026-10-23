@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <LissicTemplateRoot Condition="'$(LissicTemplateRoot)' == ''">Templates</LissicTemplateRoot>
+    <LissicTemplateSourceRoot Condition="'$(LissicTemplateSourceRoot)' == ''">_</LissicTemplateSourceRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="$(LissicTemplateRoot)\**" />
+    <CompilerVisibleProperty Include="LissicIgnoreRequiredProperties" />
+    <CompilerVisibleProperty Include="LissicTemplateRoot" />
+    <CompilerVisibleProperty Include="LissicTemplateSourceRoot" />
+    <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <CompilerVisibleProperty Include="OutDir" />
+    <None Include="$(LissicTemplateRoot)\**" Link="$(LissicTemplateRoot)\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Tests</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
+    <PackageReference Include="Verify.XunitV3" Version="32.0.1" />
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="NSubstitute" Version="6.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../src/Lissic/Lissic.csproj" />
+    <ProjectReference Include="../src/LissicGen/LissicGen.csproj" OutputItemType="Analyzer" />
+    <Import Include="../src/LissicGen/build/Lissic.props" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="PackageTests\**" />
+    <Content Remove="PackageTests\**" />
+    <EmbeddedResource Remove="PackageTests\**" />
+    <None Remove="PackageTests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Templates\*.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

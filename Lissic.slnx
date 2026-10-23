@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/Tests.csproj" />
+    <Project Path="Tests/PackageTests/PackageTests.csproj" />
+  </Folder>
+  <Project Path="src/Lissic/Lissic.csproj" />
+  <Project Path="src/LissicGen/LissicGen.csproj" />
+</Solution>

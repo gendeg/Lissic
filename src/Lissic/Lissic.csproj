@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Lissic</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Gary Gende</Authors>
+    <Description>A templating library for .NET</Description>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/gendeg/Lissic</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\Parsing\**\*.cs" LinkBase="Parsing" />
+    <Compile Include="..\Shared\*.cs" LinkBase="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+  </ItemGroup>
+
+  <Target Name="AddGeneratorToPackage" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="..\LissicGen\build\Lissic.props" PackagePath="build" Pack="true" Visible="false" />
+
+      <None Include="..\LissicGen\bin\$(Configuration)\netstandard2.0\LissicGen.dll"
+            PackagePath="analyzers/dotnet/cs" Pack="true" Visible="false" />
+
+      <None Include="..\LissicGen\bin\$(Configuration)\netstandard2.0\System.Memory.dll"
+            PackagePath="analyzers/dotnet/cs" Pack="true" Visible="false" />
+      <None Include="..\LissicGen\bin\$(Configuration)\netstandard2.0\System.Buffers.dll"
+            PackagePath="analyzers/dotnet/cs" Pack="true" Visible="false" />
+      <None Include="..\LissicGen\bin\$(Configuration)\netstandard2.0\System.Numerics.Vectors.dll"
+            PackagePath="analyzers/dotnet/cs" Pack="true" Visible="false" />
+      <None Include="..\LissicGen\bin\$(Configuration)\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll"
+            PackagePath="analyzers/dotnet/cs" Pack="true" Visible="false" />
+      <None Include="..\LissicGen\bin\$(Configuration)\netstandard2.0\Microsoft.Bcl.HashCode.dll"
+            PackagePath="analyzers/dotnet/cs" Pack="true" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+</Project>

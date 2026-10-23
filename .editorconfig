@@ -1,0 +1,39 @@
+[*.cs]
+# Dispose objects before losing scope
+dotnet_diagnostic.CA2000.severity = error
+
+# Disposable fields should be disposed
+dotnet_diagnostic.CA2213.severity = error
+
+# IDE0051: Remove unused private members (methods, properties, fields)
+dotnet_diagnostic.IDE0051.severity = warning
+
+# IDE0060: Remove unused parameters in methods
+dotnet_diagnostic.IDE0060.severity = warning
+
+# IDE0059: Remove unnecessary value assignments (variables assigned but never used)
+dotnet_diagnostic.IDE0059.severity = warning
+
+# IDE0031: Remove unnecessary null-checks
+dotnet_diagnostic.IDE0031.severity = suggestion
+
+# IDE0005: Remove unnecessary using directives (grayed-out imports)
+dotnet_diagnostic.IDE0005.severity = warning
+
+# CS0168: Variable is declared but never used (Compiler Warning)
+dotnet_diagnostic.CS0168.severity = warning
+
+# CS0219: Variable is assigned but its value is never used (Compiler Warning)
+dotnet_diagnostic.CS0219.severity = warning
+
+# CS8321: Local function is declared but never used
+dotnet_diagnostic.CS8321.severity = warning
+
+# Prefer using a discard '_' for unused expression results
+csharp_style_unused_value_expression_statement_preference = discard:warning
+
+#### FORMATTING & WHITESPACE ####
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
