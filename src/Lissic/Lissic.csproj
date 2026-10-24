@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>Lissic</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Gary Gende</Authors>
     <Description>A templating library for .NET</Description>
     <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
