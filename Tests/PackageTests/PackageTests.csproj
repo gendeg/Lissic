@@ -17,11 +17,6 @@
 
   <ItemGroup>
     <PackageReference Include="Lissic" Version="*" />
-    <!-- This ensures the latest Lissic code is built before the test is run -->
-    <ProjectReference Include="../../src/Lissic/Lissic.csproj" 
-                      ReferenceOutputAssembly="false" 
-                      SkipGetTargetFrameworkProperties="true" />
-
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="xunit.v3" Version="4.0.2" />
@@ -31,7 +26,34 @@
     </PackageReference>
   </ItemGroup>
 
-  <Target Name="ClearLocalNugetCache" BeforeTargets="Restore">
+  <!-- Create full-path template for tests based on project directory -->
+  <Target Name="GenerateFullPathTemplate" BeforeTargets="BeforeCompile;CoreCompile">
+    <PropertyGroup>
+      <_FullPathTemplateFile>$(IntermediateOutputPath)FullPathTemplate.g.cs</_FullPathTemplateFile>
+      <_FullPathTemplateSource>
+namespace Lissic.Package.Tests%3B
+
+public partial class ImportedPackageTests
+{
+    [TemplatePath(@"$(MSBuildProjectDirectory)/TestTemplates/test.html")]
+    public partial class TestFullPathTemplate {}
+}
+      </_FullPathTemplateSource>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_FullPathTemplateFile)" Lines="$(_FullPathTemplateSource)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Remove="$(_FullPathTemplateFile)" />
+      <Compile Include="$(_FullPathTemplateFile)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Ensure latest version of Lissic is packed before restore -->
+  <Target Name="PackLissic" BeforeTargets="Restore;ClearLocalNuGetCache" Condition="'$(BuildingSolutionFile)' != 'true'">
+    <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)../../src/LissicGen/LissicGen.csproj&quot; -c $(Configuration)" />
+    <Exec Command="dotnet pack &quot;$(MSBuildThisFileDirectory)../../src/Lissic/Lissic.csproj&quot; -c $(Configuration) -o &quot;$(MSBuildThisFileDirectory)Packages&quot;" />
+  </Target>
+
+  <Target Name="ClearLocalNuGetCache" BeforeTargets="Restore">
     <ItemGroup>
       <CacheFiles Include="$(NugetPackageRoot)Lissic/**/*.*" />
     </ItemGroup>

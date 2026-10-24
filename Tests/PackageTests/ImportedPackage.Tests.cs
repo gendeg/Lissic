@@ -226,9 +226,6 @@ public partial class ImportedPackageTests
     [TemplateText("Item: {{ item }}\n")]
     public partial class TestLoopInnerTemplate {}
 
-    [TemplatePath("S:\\Lissic\\Tests\\PackageTests\\TestTemplates\\test.html")]
-    public partial class TestFullPathTemplate {}
-
     [TemplateText("""
 <ul id='products'>
   {{ loop.inner }}

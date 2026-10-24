@@ -14,8 +14,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageOutputPath>../../Tests/PackageTests/Packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

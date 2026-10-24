@@ -3,4 +3,5 @@
 **/bin/
 **/obj/
 **/*.g.received.cs
-/Tests/PackageTests/Packages
+/Tests/PackageTests/Packages/*.nupkg
+/Tests/PackageTests/Packages/*.snupkg
