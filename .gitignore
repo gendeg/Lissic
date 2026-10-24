@@ -3,3 +3,4 @@
 **/bin/
 **/obj/
 **/*.g.received.cs
+/Tests/PackageTests/Packages

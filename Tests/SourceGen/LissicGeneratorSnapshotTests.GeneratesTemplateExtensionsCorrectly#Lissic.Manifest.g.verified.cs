@@ -32,39 +32,36 @@ As always, {{ branch.farewellType[like=>@take care!;dislike=>@goodbye!;]}} ", "W
 
     public static class ServiceCollectionExtensions
     {
-        extension (IServiceCollection services)
+        public static Task<IServiceCollection> AddLissicAsync(this IServiceCollection services, Action<LissicOptions>? configureAction = null)
         {
-            public Task<IServiceCollection> AddLissicAsync(Action<LissicOptions>? configureAction = null)
+            LissicOptions options = new();
+            configureAction?.Invoke(options);
+            return AddLissicAsync(services, options);
+        }
+
+        public static async Task<IServiceCollection> AddLissicAsync(this IServiceCollection services, LissicOptions options)
+        {
+            if (!LissicConfigurator.IsInitialized)
+                LissicConfigurator.SetOptions(options);
+
+            Lissic__FilterRegistration.Register();
+
+            TemplateCache templateCache = new();
+            await templateCache.Initialize(new TemplateManifest());
+
+            services.AddSingleton(templateCache);
+            if (options.RegisterAsTransient)
             {
-                LissicOptions options = new();
-                configureAction?.Invoke(options);
-                return AddLissicAsync(services, options);
+                services.AddTransient<ILissicProcessor, LissicProcessor>();
+                services.AddTransient<LissicProcessor>();
+            }
+            else
+            {
+                services.AddScoped<ILissicProcessor, LissicProcessor>();
+                services.AddScoped<LissicProcessor>();
             }
 
-            public async Task<IServiceCollection> AddLissicAsync(LissicOptions options)
-            {
-                if (!LissicConfigurator.IsInitialized)
-                    LissicConfigurator.SetOptions(options);
-
-                Lissic__FilterRegistration.Register();
-
-                TemplateCache templateCache = new();
-                await templateCache.Initialize(new TemplateManifest());
-
-                services.AddSingleton(templateCache);
-                if (options.RegisterAsTransient)
-                {
-                    services.AddTransient<ILissicProcessor, LissicProcessor>();
-                    services.AddTransient<LissicProcessor>();
-                }
-                else
-                {
-                    services.AddScoped<ILissicProcessor, LissicProcessor>();
-                    services.AddScoped<LissicProcessor>();
-                }
-
-                return services;
-            }
+            return services;
         }
     }
 }

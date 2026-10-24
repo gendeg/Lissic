@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Lissic</PackageId>
     <Version>0.1.0</Version>
     <Authors>Gary Gende</Authors>
@@ -15,6 +14,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAotCompatible>true</IsAotCompatible>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>../../Tests/PackageTests/Packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
