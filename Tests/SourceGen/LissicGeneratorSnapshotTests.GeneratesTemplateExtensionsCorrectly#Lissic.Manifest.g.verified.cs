@@ -32,11 +32,11 @@ As always, {{ branch.farewellType[like=>@take care!;dislike=>@goodbye!;]}} ", "W
 
     public static class ServiceCollectionExtensions
     {
-        public static Task<IServiceCollection> AddLissicAsync(this IServiceCollection services, Action<LissicOptions>? configureAction = null)
+        public static async Task<IServiceCollection> AddLissicAsync(this IServiceCollection services, Action<LissicOptions>? configureAction = null)
         {
             LissicOptions options = new();
             configureAction?.Invoke(options);
-            return AddLissicAsync(services, options);
+            return await AddLissicAsync(services, options);
         }
 
         public static async Task<IServiceCollection> AddLissicAsync(this IServiceCollection services, LissicOptions options)
