@@ -184,6 +184,7 @@ internal static class LissicParser
                 throw new TemplateParsingException($"Option for branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}, is not closed properly.  Is there a closing ';'?");
 
             s.branchOptions[keyValue] = [ParseTag(options[s.pos..(s.pos + endIdx)], templateName, parseIdx + s.pos)];
+            s.pos += endIdx + 1;
         }
 
         return true;

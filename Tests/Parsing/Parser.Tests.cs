@@ -293,6 +293,26 @@ public class ParseBranchTests
     }
 
     [Fact]
+    public void Parse_BranchWithCommands_ParsesCorrectly()
+    {
+        ITemplateNode[] nodes = LissicParser.Parse("{{branch.option[one=>part.red;two=>loop.blue;three=>yellow;]}}", "TestTemplate");
+        BranchNode branch = Assert.IsType<BranchNode>(Assert.Single(nodes));
+        Assert.Equal(3, branch.BranchEntries.Count);
+
+        ITemplateNode[] one = branch.BranchEntries["one"];
+        PartNode cmd = Assert.IsType<PartNode>(Assert.Single(one));
+        Assert.Equal("red", cmd.Name);
+
+        ITemplateNode[] two = branch.BranchEntries["two"];
+        LoopNode cmd2 = Assert.IsType<LoopNode>(Assert.Single(two));
+        Assert.Equal("blue", cmd2.Name);
+
+        ITemplateNode[] three = branch.BranchEntries["three"];
+        VariableNode cmd3 = Assert.IsType<VariableNode>(Assert.Single(three));
+        Assert.Equal("yellow", cmd3.Name);
+    }
+
+    [Fact]
     public void Parse_BranchMissingOptionsBracket_Throws()
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse("{{branch.color}}", "TestTemplate"));
