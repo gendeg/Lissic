@@ -2,7 +2,7 @@
 #nullable enable
 namespace Lissic;
 
-internal static class Lissic__FilterRegistration
+internal static class Lissic_FilterRegistration
 {
     internal static void Register()
     {

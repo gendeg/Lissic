@@ -17,16 +17,16 @@ public partial class WelcomeMessage : LissicTemplate
     public required VariableValue testVal { get; set; }
     public required VariableValue testVal2 { get; set; }
     public required BranchValue farewellType { get; set; }
-    private static readonly string[] __args_Name = ["10", "left"];
-    private static readonly string[] __args_City = ["trim"];
+    private static readonly string[] _args_Name = ["10", "left"];
+    private static readonly string[] _args_City = ["trim"];
 
-    public override string Get__BranchKey(ReadOnlySpan<char> keyName) => keyName switch
+    public override string Get_BranchKey(ReadOnlySpan<char> keyName) => keyName switch
     {
         "farewellType" => farewellType.Key,
         _ => ""
     };
 
-    public override LoopValue? Get__Loop(ReadOnlySpan<char> name)
+    public override LoopValue? Get_Loop(ReadOnlySpan<char> name)
     {
         switch (name)
         {
@@ -35,13 +35,13 @@ public partial class WelcomeMessage : LissicTemplate
         }
     }
 
-    public override LissicTemplate? Get__Part(ReadOnlySpan<char> name) => name switch
+    public override LissicTemplate? Get_Part(ReadOnlySpan<char> name) => name switch
     {
         "thingPart" => thingPart.Template,
         _ => null
     };
 
-    public override string? Get__VariableString(ReadOnlySpan<char> name)
+    public override string? Get_VariableString(ReadOnlySpan<char> name)
     {
         switch (name)
         {
@@ -49,14 +49,14 @@ public partial class WelcomeMessage : LissicTemplate
             {
                 if (Name.IsEmpty) return string.Empty;
                 using PooledByteWriter buffer = new();
-                global::Tests.Formatters.PadFormatter.Format(Name, buffer, __args_Name);
+                global::Tests.Formatters.PadFormatter.Format(Name, buffer, _args_Name);
                 return buffer.GetString();
             }
             case "City":
             {
                 if (City.IsEmpty) return string.Empty;
                 using PooledByteWriter buffer = new();
-                global::Tests.Formatters.LowerFormatter.Format(City, buffer, __args_City);
+                global::Tests.Formatters.LowerFormatter.Format(City, buffer, _args_City);
                 return buffer.GetString();
             }
             case "testVal": return testVal.ToString();
@@ -65,12 +65,12 @@ public partial class WelcomeMessage : LissicTemplate
         }
     }
 
-    public override int Stream__Variable(ReadOnlySpan<char> variableName, IBufferWriter<byte> writer)
+    public override int Stream_Variable(ReadOnlySpan<char> variableName, IBufferWriter<byte> writer)
     {
         switch (variableName)
         {
-            case "Name": if (Name.IsEmpty) return -1; return global::Tests.Formatters.PadFormatter.Format(Name, writer, __args_Name);
-            case "City": if (City.IsEmpty) return -1; return global::Tests.Formatters.LowerFormatter.Format(City, writer, __args_City);
+            case "Name": if (Name.IsEmpty) return -1; return global::Tests.Formatters.PadFormatter.Format(Name, writer, _args_Name);
+            case "City": if (City.IsEmpty) return -1; return global::Tests.Formatters.LowerFormatter.Format(City, writer, _args_City);
             case "testVal": if (testVal.IsEmpty) return -1; return testVal.WriteTo(writer);
             case "testVal2": if (testVal2.IsEmpty) return -1; return testVal2.WriteTo(writer);
             default: return -1;

@@ -11,7 +11,7 @@ public class TemplateBaseTests
 	{
 		ArrayBufferWriter<byte> writer = new();
 
-		int wrote = new TestTemplate().Stream__Variable("missing", writer);
+		int wrote = new TestTemplate().Stream_Variable("missing", writer);
 
 		Assert.Equal(-1, wrote);
 		Assert.Equal(0, writer.WrittenCount);
@@ -24,7 +24,7 @@ public class TemplateBaseTests
 		private readonly Dictionary<string, string> properties = [];
 		private readonly Dictionary<string, LoopValue> loops = [];
 
-		public override int Template__Index => 0;
+		public override int Template_Index => 0;
 
 		public TestTemplate SetBranchKey(string name, string value)
 		{
@@ -50,22 +50,22 @@ public class TemplateBaseTests
 			return this;
 		}
 
-		public override string Get__BranchKey(ReadOnlySpan<char> keyName) =>
+		public override string Get_BranchKey(ReadOnlySpan<char> keyName) =>
 			branchKeys.TryGetValue(keyName.ToString(), out string? value)
 				? value
 				: "";
 
-		public override LissicTemplate? Get__Part(ReadOnlySpan<char> name) =>
+		public override LissicTemplate? Get_Part(ReadOnlySpan<char> name) =>
 			parts.TryGetValue(name.ToString(), out LissicTemplate? value)
 				? value
 				: null;
 
-		public override string? Get__VariableString(ReadOnlySpan<char> name) =>
+		public override string? Get_VariableString(ReadOnlySpan<char> name) =>
 			properties.TryGetValue(name.ToString(), out string? value)
 				? value
 				: null;
 
-		public override LoopValue? Get__Loop(ReadOnlySpan<char> name)
+		public override LoopValue? Get_Loop(ReadOnlySpan<char> name)
 		{
 			if (loops.TryGetValue(name.ToString(), out LoopValue value))
 				return value;
@@ -73,7 +73,7 @@ public class TemplateBaseTests
 			return null;
 		}
 
-		public override int Stream__Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer)
+		public override int Stream_Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer)
 		{
 			if (!properties.TryGetValue(name.ToString(), out string? value))
 				return -1;

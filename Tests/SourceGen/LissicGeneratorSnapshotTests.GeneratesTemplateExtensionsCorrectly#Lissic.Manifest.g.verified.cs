@@ -44,7 +44,7 @@ As always, {{ branch.farewellType[like=>@take care!;dislike=>@goodbye!;]}} ", "W
             if (!LissicConfigurator.IsInitialized)
                 LissicConfigurator.SetOptions(options);
 
-            Lissic__FilterRegistration.Register();
+            Lissic_FilterRegistration.Register();
 
             TemplateCache templateCache = new();
             await templateCache.Initialize(new TemplateManifest());
@@ -71,7 +71,7 @@ namespace Tests.FakeSpace
 public partial class Templates { 
     public partial class WelcomeMessage
     {
-        public override int Template__Index => 0;
+        public override int Template_Index => 0;
     }
 }
 }

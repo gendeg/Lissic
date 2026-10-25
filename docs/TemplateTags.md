@@ -167,14 +167,14 @@ The following are case sensitive:
 
 The following names are used internally to Lissic.  Attempting to create a tag with one of these names will result in undefined behavior.
 
-- Get__BranchKey
-- Get__Part
-- Get__VariableString
-- Get__Loop
-- Has__Value
-- Inherited__Values
-- Stream__Variable
-- Template__Index
-- Any name that starts with "\_\_args\_"
+- Get_BranchKey
+- Get_Part
+- Get_VariableString
+- Get_Loop
+- Has_Value
+- Inherited_Values
+- Stream_Variable
+- Template_Index
+- Any name that starts with "\_args\_"
 
 ---

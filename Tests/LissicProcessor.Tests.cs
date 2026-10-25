@@ -45,8 +45,8 @@ public class LissicProcessorTests
 		{
 			Date = new DateTimeOffset(2024, 3, 4, 5, 6, 7, TimeSpan.Zero)
 		};
-		string[] templates = Enumerable.Repeat(string.Empty, template.Template__Index + 1).ToArray();
-		templates[template.Template__Index] = "{{ Date }}";
+		string[] templates = Enumerable.Repeat(string.Empty, template.Template_Index + 1).ToArray();
+		templates[template.Template_Index] = "{{ Date }}";
 		using TestRig rig = await CreateRig(templates);
 
 		Assert.Equal("03-04-24 A.D.", rig.Processor.RenderToString(template));
@@ -771,11 +771,11 @@ public class LissicProcessorTests
 	{
 		private static readonly byte[] NameBytes = "ada"u8.ToArray();
 
-		public override int Template__Index => index;
+		public override int Template_Index => index;
 		public LissicTemplate? Part { get; init; }
 		public LoopValue? Items { get; init; }
 
-		public override int Stream__Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer)
+		public override int Stream_Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer)
 		{
 			if (name is not "name")
 				return -1;
@@ -784,14 +784,14 @@ public class LissicProcessorTests
 			return NameBytes.Length;
 		}
 
-		public override LissicTemplate? Get__Part(ReadOnlySpan<char> name) => name is "p" ? Part : null;
+		public override LissicTemplate? Get_Part(ReadOnlySpan<char> name) => name is "p" ? Part : null;
 
-		public override LoopValue? Get__Loop(ReadOnlySpan<char> name) => name is "items" ? Items : null;
+		public override LoopValue? Get_Loop(ReadOnlySpan<char> name) => name is "items" ? Items : null;
 
-		public override string Get__BranchKey(ReadOnlySpan<char> keyName) =>
+		public override string Get_BranchKey(ReadOnlySpan<char> keyName) =>
 			keyName is "color" ? "red" : "";
 
-		public override string? Get__VariableString(ReadOnlySpan<char> name) => throw new NotImplementedException();
+		public override string? Get_VariableString(ReadOnlySpan<char> name) => throw new NotImplementedException();
 	}
 
 	private sealed record TestRig(LissicProcessor Processor) : IDisposable
@@ -814,7 +814,7 @@ public class LissicProcessorTests
 		private readonly Dictionary<string, LissicTemplate> parts = [];
 		private readonly Dictionary<string, LoopValue> loops = [];
 
-		public override int Template__Index => index;
+		public override int Template_Index => index;
 
 		public TestTemplate SetVariable(string name, string value)
 		{
@@ -840,13 +840,13 @@ public class LissicProcessorTests
 			return this;
 		}
 
-		public override string Get__BranchKey(ReadOnlySpan<char> keyName) =>
+		public override string Get_BranchKey(ReadOnlySpan<char> keyName) =>
 			branchKeys.GetValueOrDefault(keyName.ToString()) ?? "";
 
-		public override LissicTemplate? Get__Part(ReadOnlySpan<char> name) =>
+		public override LissicTemplate? Get_Part(ReadOnlySpan<char> name) =>
 			parts.GetValueOrDefault(name.ToString());
 
-		public override LoopValue? Get__Loop(ReadOnlySpan<char> name)
+		public override LoopValue? Get_Loop(ReadOnlySpan<char> name)
 		{
 			if (loops.TryGetValue(name.ToString(), out LoopValue value))
 				return value;
@@ -854,7 +854,7 @@ public class LissicProcessorTests
 			return null;
 		}
 
-		public override int Stream__Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer)
+		public override int Stream_Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer)
 		{
 			if (!properties.TryGetValue(name.ToString(), out string? value))
 				return -1;
@@ -863,7 +863,7 @@ public class LissicProcessorTests
 			return Encoding.UTF8.GetBytes(value).Length;
 		}
 
-		public override string? Get__VariableString(ReadOnlySpan<char> name) => throw new NotImplementedException();
+		public override string? Get_VariableString(ReadOnlySpan<char> name) => throw new NotImplementedException();
 	}
 }
 

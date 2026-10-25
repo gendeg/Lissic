@@ -36,7 +36,7 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
         try
         {
-            ITemplateNode[] nodes = partCache.Get(template.Template__Index);
+            ITemplateNode[] nodes = partCache.Get(template.Template_Index);
             foreach (ITemplateNode node in nodes)
             {
                 ProcessNode(node, template, writer, ref state);
@@ -61,7 +61,7 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
     private void ProcessBranch(BranchNode branchNode, LissicTemplate template, IBufferWriter<byte> writer, ref RenderState state)
     {
-        string key = template.Get__BranchKey(branchNode.BranchName);
+        string key = template.Get_BranchKey(branchNode.BranchName);
 
         if (string.IsNullOrEmpty(key))
         {
@@ -114,7 +114,7 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
     private void ProcessPart(PartNode partNode, LissicTemplate template, IBufferWriter<byte> writer, ref RenderState state)
     {
-        LissicTemplate? part = template.Get__Part(partNode.Name);
+        LissicTemplate? part = template.Get_Part(partNode.Name);
         if (part != null)
         {
             RenderToBuffer(part, writer, ref state);
@@ -128,7 +128,7 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
     private static void ProcessVariable(VariableNode variableNode, LissicTemplate template, IBufferWriter<byte> writer, ref RenderState state)
     {
-        int bytesWritten = template.Stream__Variable(variableNode.Name, writer);
+        int bytesWritten = template.Stream_Variable(variableNode.Name, writer);
         if (bytesWritten == -1 && variableNode.Required)
             UnknownTagDebug.Handle(writer, $"Missing value for variable '{variableNode.Name}'");
         else if (bytesWritten > 0)
@@ -143,7 +143,7 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
         PooledByteWriter input = scratchA;
         input.Reset();
-        if (template.Stream__Variable(node.Name, input) == -1)
+        if (template.Stream_Variable(node.Name, input) == -1)
         {
             if (node.Required)
                 UnknownTagDebug.Handle(writer, $"Missing value for variable '{node.Name}'");
@@ -164,7 +164,7 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
     private void ProcessLoop(LoopNode loopNode, LissicTemplate template, IBufferWriter<byte> writer, ref RenderState state)
     {
-        LoopValue? loop = template.Get__Loop(loopNode.Name);
+        LoopValue? loop = template.Get_Loop(loopNode.Name);
 
         if (loop is null)
         {

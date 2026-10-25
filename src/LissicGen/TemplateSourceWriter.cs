@@ -30,12 +30,12 @@ namespace {{templateRecord.Namespace}};
 {{visibility}} partial class {{templateRecord.ClassName}} : LissicTemplate
 {
 {{properties}}{{argFields}}
-    public override string Get__BranchKey(ReadOnlySpan<char> keyName) => keyName switch
+    public override string Get_BranchKey(ReadOnlySpan<char> keyName) => keyName switch
     {
 {{branchKeys}}        _ => ""
     };
 
-    public override LoopValue? Get__Loop(ReadOnlySpan<char> name)
+    public override LoopValue? Get_Loop(ReadOnlySpan<char> name)
     {
         switch (name)
         {
@@ -43,12 +43,12 @@ namespace {{templateRecord.Namespace}};
         }
     }
 
-    public override LissicTemplate? Get__Part(ReadOnlySpan<char> name) => name switch
+    public override LissicTemplate? Get_Part(ReadOnlySpan<char> name) => name switch
     {
 {{parts}}        _ => null
     };
 
-    public override string? Get__VariableString(ReadOnlySpan<char> name)
+    public override string? Get_VariableString(ReadOnlySpan<char> name)
     {
         switch (name)
         {
@@ -56,7 +56,7 @@ namespace {{templateRecord.Namespace}};
         }
     }
 
-    public override int Stream__Variable(ReadOnlySpan<char> variableName, IBufferWriter<byte> writer)
+    public override int Stream_Variable(ReadOnlySpan<char> variableName, IBufferWriter<byte> writer)
     {
         switch (variableName)
         {
@@ -108,7 +108,7 @@ namespace {{templateRecord.Namespace}};
 
         if (formatter.Args.Length > 0)
         {
-            argsRef = $"__args_{node.Name}";
+            argsRef = $"_args_{node.Name}";
             argField = $"    private static readonly string[] {argsRef} = [{formatter.ArgsToString()}];";
         }
 

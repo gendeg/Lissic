@@ -62,7 +62,7 @@ In most cases, `ILissicProcessor` should be registered with and retrieved from a
 
 To manually initiate `LissicProcessor`, do the following, in order:
 1. Set Lissic options using the static method `LissicConfigurator.SetOptions(options)`, where `options` is an instance of `LissicOptions`.  This must only be done once (see note 1 below).
-2. Register filters by calling `Lissic__FilterRegistration.Register()`.
+2. Register filters by calling `Lissic_FilterRegistration.Register()`.
 3. Initiate a new instance of `TemplateCache` and run `TemplateCache.Initialize()`.  This should only be done once (see note 2 below).
 4. Initiate a new instance of `LissicProcessor` and pass the `TemplateCache` as a constructor argument.
 

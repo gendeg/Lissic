@@ -356,13 +356,13 @@ public class LoopValueTests
 
     private sealed class TestTemplate : LissicTemplate
     {
-        public override int Template__Index => 0;
+        public override int Template_Index => 0;
 
-        public override string Get__BranchKey(ReadOnlySpan<char> keyName) => throw new NotImplementedException();
-        public override LissicTemplate? Get__Part(ReadOnlySpan<char> name) => throw new NotImplementedException();
-        public override string? Get__VariableString(ReadOnlySpan<char> name) => throw new NotImplementedException();
-        public override LoopValue? Get__Loop(ReadOnlySpan<char> name) => throw new NotImplementedException();
-        public override int Stream__Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer) => throw new NotImplementedException();
+        public override string Get_BranchKey(ReadOnlySpan<char> keyName) => throw new NotImplementedException();
+        public override LissicTemplate? Get_Part(ReadOnlySpan<char> name) => throw new NotImplementedException();
+        public override string? Get_VariableString(ReadOnlySpan<char> name) => throw new NotImplementedException();
+        public override LoopValue? Get_Loop(ReadOnlySpan<char> name) => throw new NotImplementedException();
+        public override int Stream_Variable(ReadOnlySpan<char> name, IBufferWriter<byte> writer) => throw new NotImplementedException();
     }
 }
 

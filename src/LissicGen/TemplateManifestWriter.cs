@@ -21,7 +21,7 @@ internal static class TemplateManifestSourceWriter
             if (!LissicConfigurator.IsInitialized)
                 LissicConfigurator.SetOptions(options);
 
-            Lissic__FilterRegistration.Register();
+            Lissic_FilterRegistration.Register();
 
             TemplateCache templateCache = new();
             await templateCache.Initialize(new TemplateManifest());
@@ -122,7 +122,7 @@ namespace {{template.Namespace}}
 {{{TemplateSourceWriter.GetParentHeader(template)}}
     {{visibility}} partial class {{template.ClassName}}
     {
-        public override int Template__Index => {{i}};
+        public override int Template_Index => {{i}};
     }
 {{TemplateSourceWriter.GetParentFooter(template)}}}
 
