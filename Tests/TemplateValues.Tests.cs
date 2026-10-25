@@ -85,6 +85,7 @@ public class VariableValueTests
     [InlineData(typeof(char))]
     [InlineData(typeof(string))]
     [InlineData(typeof(ReadOnlyMemory<byte>))]
+    [InlineData(typeof(byte[]))]
     public void VariableValue_CanIngestAndReturnUtf8TextTypes(Type textType)
     {
         dynamic input = textType switch
@@ -92,6 +93,7 @@ public class VariableValueTests
             Type t when t == typeof(char) => 'a',
             Type t when t == typeof(string) => "hello",
             Type t when t == typeof(ReadOnlyMemory<byte>) => (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes("hello").AsMemory(),
+            Type t when t == typeof(byte[]) => Encoding.UTF8.GetBytes("hello"),
             _ => throw new ArgumentOutOfRangeException()
         };
         VariableValue value = input;
@@ -104,6 +106,7 @@ public class VariableValueTests
             Type t when t == typeof(char) => "a",
             Type t when t == typeof(string) => "hello",
             Type t when t == typeof(ReadOnlyMemory<byte>) => "hello",
+            Type t when t == typeof(byte[]) => "hello",
             _ => throw new ArgumentOutOfRangeException()
         };
 
@@ -170,6 +173,7 @@ public class VariableValueTests
     [InlineData(typeof(char))]
     [InlineData(typeof(string))]
     [InlineData(typeof(ReadOnlyMemory<byte>))]
+    [InlineData(typeof(byte[]))]
     public void VariableValue_CanIngestAndReturnUtf8TextAsString(Type textType)
     {
         dynamic input = textType switch
@@ -177,6 +181,7 @@ public class VariableValueTests
             Type t when t == typeof(char) => 'a',
             Type t when t == typeof(string) => "hello",
             Type t when t == typeof(ReadOnlyMemory<byte>) => (ReadOnlyMemory<byte>)Encoding.UTF8.GetBytes("hello").AsMemory(),
+            Type t when t == typeof(byte[]) => Encoding.UTF8.GetBytes("hello"),
             _ => throw new ArgumentOutOfRangeException()
         };
         VariableValue value = input;
@@ -188,6 +193,7 @@ public class VariableValueTests
             Type t when t == typeof(char) => "a",
             Type t when t == typeof(string) => "hello",
             Type t when t == typeof(ReadOnlyMemory<byte>) => "hello",
+            Type t when t == typeof(byte[]) => "hello",
             _ => throw new ArgumentOutOfRangeException()
         };
 

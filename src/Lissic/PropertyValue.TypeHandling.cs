@@ -147,6 +147,13 @@ public readonly partial struct VariableValue : ITemplateValue
     }
     public static implicit operator VariableValue(ReadOnlyMemory<byte> utf8Bytes) => new(utf8Bytes);
 
+    public VariableValue(byte[] utf8Bytes)
+    {
+        type = VariableValueType.Utf8Text;
+        rawTextValue = new ReadOnlyMemory<byte>(utf8Bytes);
+    }
+    public static implicit operator VariableValue(byte[] utf8Bytes) => new(utf8Bytes);
+
     public VariableValue(string value)
     {
         type = VariableValueType.Utf8Text;
