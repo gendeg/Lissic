@@ -249,14 +249,14 @@ public class LissicTemplateGenerator : IIncrementalGenerator
 
         string key = Path.GetFullPath(Path.Combine(templateRoot, templateRecord.Value.Content)).Replace('\\', '/');
         if (!files.TryGetValue(key, out AdditionalText? sourceFile))
-            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.MissingTemplateFile, location, key));
-
-        string? sourceText = sourceFile?.GetText()?.ToString();
-        if (sourceText is null)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.EmptyTemplateFile, location, key));
+            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.MissingTemplateFile, location, key));
             return;
         }
+
+        string sourceText = sourceFile?.GetText()?.ToString() ?? "";
+        if (sourceText == "")
+            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.EmptyTemplateFile, location, key));
 
         TemplateRecord textTemplateRecord = new(
             sourceText,

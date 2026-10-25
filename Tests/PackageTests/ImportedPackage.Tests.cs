@@ -207,6 +207,11 @@ public partial class ImportedPackageTests
     [TemplatePath("test.html")]
     public partial class TestTemplate {}
 
+    [TemplatePath("empty.html")]
+#pragma warning disable LISSIC008 // Verify empty template warning, as double check on LissicGen tests
+    public partial class TestEmptyTemplate {}
+#pragma warning restore LISSIC008
+
     [TemplateText("Hello, {{ name <upper> }}!")]
     public partial class TestFilterTemplate {}
 

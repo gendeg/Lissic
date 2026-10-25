@@ -3,6 +3,7 @@ using LissicGen;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -431,6 +432,52 @@ public partial class WelcomeMessage { }
         Assert.Empty(ids);
     }
 
+    [Fact]
+    public void PathTemplate_MissingFile_ReportsOnlyMissingDiagnostic()
+    {
+        GeneratorDriver driver = SnapshotRunner.Run($$$"""
+{{{TemplateHeader}}}
+[TemplatePath("missing.html")]
+public partial class WelcomeMessage { }
+""", templateFiles: new Dictionary<string, string> { ["other.html"] = "Hello" });
+
+        GeneratorRunResult result = driver.GetRunResult().Results[0];
+        Diagnostic diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("LISSIC007", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        Assert.Contains("missing.html", diagnostic.GetMessage());
+        Assert.Empty(result.GeneratedSources.Where(source => source.HintName == "Lissic.WelcomeMessage.g.cs"));
+    }
+
+    [Fact]
+    public void PathTemplate_EmptyFile_ReportsOnlyEmptyDiagnostic()
+    {
+        GeneratorDriver driver = SnapshotRunner.Run($$$"""
+{{{TemplateHeader}}}
+[TemplatePath("empty.html")]
+public partial class WelcomeMessage { }
+""", templateFiles: new Dictionary<string, string> { ["empty.html"] = "" });
+
+        Diagnostic diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
+        Assert.Equal("LISSIC008", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+        Assert.Contains("empty.html", diagnostic.GetMessage());
+    }
+
+    [Fact]
+    public void PathTemplate_ExistingFile_ReportsNoDiagnostics()
+    {
+        GeneratorDriver driver = SnapshotRunner.Run($$$"""
+{{{TemplateHeader}}}
+[TemplatePath("sub/hello.html")]
+public partial class WelcomeMessage { }
+""", templateFiles: new Dictionary<string, string> { ["sub/hello.html"] = "Hello" });
+
+        GeneratorRunResult result = driver.GetRunResult().Results[0];
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains(result.GeneratedSources, source => source.HintName == "Lissic.WelcomeMessage.g.cs");
+    }
+
     private static int CountOccurrences(string text, string value)
     {
         int count = 0;
@@ -464,16 +511,16 @@ public static class SnapshotRunner
     public static string GetSource(string template, string hintSuffix, bool ignoreRequired = false)
         => Run(template, ignoreRequired).GetRunResult().GeneratedTrees.Single(tree => tree.FilePath.EndsWith(hintSuffix)).ToString();
 
-    public static GeneratorDriver Run(string template, bool ignoreRequired = false)
-        => Run(template, ignoreRequired, out _);
+    public static GeneratorDriver Run(string template, bool ignoreRequired = false, IReadOnlyDictionary<string, string>? templateFiles = null)
+        => Run(template, ignoreRequired, templateFiles, out _);
 
     public static Diagnostic[] GetCompilationErrors(string template, bool ignoreRequired = false)
     {
-        Run(template, ignoreRequired, out Compilation output);
+        Run(template, ignoreRequired, null, out Compilation output);
         return output.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
     }
 
-    private static GeneratorDriver Run(string template, bool ignoreRequired, out Compilation outputCompilation)
+    private static GeneratorDriver Run(string template, bool ignoreRequired, IReadOnlyDictionary<string, string>? templateFiles, out Compilation outputCompilation)
     {
         IEnumerable<PortableExecutableReference> references =
             ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
@@ -490,15 +537,36 @@ public static class SnapshotRunner
             references: references,
             options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
+        Dictionary<string, string> globalOptions = new()
+        {
+            ["build_property.LissicIgnoreRequiredProperties"] = ignoreRequired ? "true" : "false",
+        };
+
+        // Only set when files are supplied so existing snapshots keep their default manifest roots.
+        List<AdditionalText> additionalTexts = [];
+        if (templateFiles is not null)
+        {
+            string projectDir = Path.Combine(Path.GetTempPath(), "LissicGenTests");
+            globalOptions["build_property.MSBuildProjectDirectory"] = projectDir;
+            globalOptions["build_property.LissicTemplateRoot"] = "Templates";
+            foreach (KeyValuePair<string, string> file in templateFiles)
+                additionalTexts.Add(new InMemoryText(Path.Combine(projectDir, "Templates", file.Key), file.Value));
+        }
+
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: [new LissicTemplateGenerator().AsSourceGenerator()],
+            additionalTexts: additionalTexts,
             parseOptions: parseOptions,
-            optionsProvider: new TestOptionsProvider(new Dictionary<string, string>
-            {
-                ["build_property.LissicIgnoreRequiredProperties"] = ignoreRequired ? "true" : "false",
-            }));
+            optionsProvider: new TestOptionsProvider(globalOptions));
         return driver.RunGeneratorsAndUpdateCompilation(compilation, out outputCompilation, out _);
     }
+}
+
+
+sealed class InMemoryText(string path, string content) : AdditionalText
+{
+    public override string Path { get; } = path;
+    public override SourceText? GetText(CancellationToken cancellationToken = default) => SourceText.From(content);
 }
 
 
