@@ -8,6 +8,16 @@ using System.Buffers;
 namespace Tests.FakeSpace;
 
 public partial class Templates { 
+/// <summary>
+/// WelcomeMessage has the following properties:<br/>
+/// - VariableValue Name (required) <br/>
+/// - VariableValue City<br/>
+/// - PartValue thingPart (required) <br/>
+/// - LoopValue itemsForLoop (required) <br/>
+/// - VariableValue testVal (required) <br/>
+/// - VariableValue testVal2 (required) <br/>
+/// - BranchValue farewellType (required) <br/>
+/// </summary>
 public partial class WelcomeMessage : LissicTemplate
 {
     public required VariableValue Name { get; set; }

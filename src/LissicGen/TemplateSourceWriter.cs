@@ -11,7 +11,7 @@ internal static class TemplateSourceWriter
     public static string Generate(TemplateRecord templateRecord, ITemplateNode[] templateNodes, bool ignoreRequiredProperties)
     {
 
-        (string properties, string argFields, string branchKeys, string loops, string parts, string variableStrings, string streamProperties)
+        (string properties, string argFields, string branchKeys, string loops, string parts, string variableStrings, string streamProperties, string propertyComments)
             = ParseNodes(templateNodes, templateRecord, ignoreRequiredProperties);
 
         string visibility = (templateRecord.TargetClass as INamedTypeSymbol)?.DeclaredAccessibility.ToString().ToLower() ?? "public";
@@ -27,6 +27,9 @@ using System.Buffers;
 
 namespace {{templateRecord.Namespace}};
 {{GetParentHeader(templateRecord)}}
+/// <summary>
+/// {{templateRecord.ClassName}} has the following properties:<br/>{{(string.IsNullOrEmpty(propertyComments) ? "\n/// <em>No properties required for this template</em>" : propertyComments)}}
+/// </summary>
 {{visibility}} partial class {{templateRecord.ClassName}} : LissicTemplate
 {
 {{properties}}{{argFields}}
@@ -168,10 +171,11 @@ namespace {{templateRecord.Namespace}};
         return $"{modifiersStr}{keyword} {identifier}{typeParams}{recordParams}{constraints}";
     }
 
-    internal static (string properties, string argFields, string branchKeys, string loops, string parts, string variableStrings, string streamProperties)
-        ParseNodes(ITemplateNode[] templateNodes, TemplateRecord templateRecord, bool irp)
+    internal static (string properties, string argFields, string branchKeys, string loops, string parts, string variableStrings, string streamProperties, string propertyComments)
+        ParseNodes(ITemplateNode[] templateNodes, TemplateRecord templateRecord, bool ignoreRequiredProperties)
     {
         StringBuilder sbProperties = new();
+        StringBuilder sbPropertyComments = new();
         StringBuilder sbArgFields = new();
         StringBuilder sbBranchKeys = new();
         StringBuilder sbLoops = new();
@@ -194,24 +198,29 @@ namespace {{templateRecord.Namespace}};
             if (GetNodeProperties(node) is not (string name, _) || !declared.Add(name))
                 continue;
 
-            string requiredModifier = isRequired[name] && !irp ? "required " : "";
+            string requiredModifier = isRequired[name] && !ignoreRequiredProperties ? "required " : "";
+            string requiredNote = isRequired[name] && !ignoreRequiredProperties ? " (required) " : "";
 
             switch (node)
             {
                 case BranchNode:
                     sbProperties.AppendLine($"    public {requiredModifier}BranchValue {name} {{ get; set; }}");
+                    sbPropertyComments.Append($"\n/// - BranchValue {name}{requiredNote}<br/>");
                     sbBranchKeys.AppendLine($"        \"{name}\" => {name}.Key,");
                     break;
                 case LoopNode:
                     sbProperties.AppendLine($"    public {requiredModifier}LoopValue {name} {{ get; set; }}");
+                    sbPropertyComments.Append($"\n/// - LoopValue {name}{requiredNote}<br/>");
                     sbLoops.AppendLine($"            case \"{name}\": return {name};");
                     break;
                 case PartNode:
                     sbProperties.AppendLine($"    public {requiredModifier}PartValue {name} {{ get; set; }}");
+                    sbPropertyComments.Append($"\n/// - PartValue {name}{requiredNote}<br/>");
                     sbParts.AppendLine($"        \"{name}\" => {name}.Template,");
                     break;
                 case VariableNode variableNode:
                     sbProperties.AppendLine($"    public {requiredModifier}VariableValue {name} {{ get; set; }}");
+                    sbPropertyComments.Append($"\n/// - VariableValue {name}{requiredNote}<br/>");
                     (string returnString, string streamVariable, string argField) = GetVariableStrings(variableNode, templateRecord);
                     if (argField.Length > 0)
                         sbArgFields.AppendLine(argField);
@@ -221,7 +230,7 @@ namespace {{templateRecord.Namespace}};
             }
         }
 
-        return (sbProperties.ToString(), sbArgFields.ToString(), sbBranchKeys.ToString(), sbLoops.ToString(), sbParts.ToString(), sbVariableStrings.ToString(), sbStreamProperties.ToString());
+        return (sbProperties.ToString(), sbArgFields.ToString(), sbBranchKeys.ToString(), sbLoops.ToString(), sbParts.ToString(), sbVariableStrings.ToString(), sbStreamProperties.ToString(), sbPropertyComments.ToString());
     }
 
     // Enumerates all template nodes, including nested nodes within branch entries
