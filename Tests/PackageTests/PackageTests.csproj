@@ -26,6 +26,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="../Templates/header.html" />
+  </ItemGroup>
+
   <!-- Create full-path template for tests based on project directory -->
   <Target Name="GenerateFullPathTemplate" BeforeTargets="BeforeCompile;CoreCompile">
     <PropertyGroup>

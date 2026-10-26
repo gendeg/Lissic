@@ -212,6 +212,9 @@ public partial class ImportedPackageTests
     public partial class TestEmptyTemplate {}
 #pragma warning restore LISSIC008
 
+    [TemplatePath("../../Templates/header.html")]
+    public partial class TestOutsideDirectory {}
+
     [TemplateText("Hello, {{ name <upper> }}!")]
     public partial class TestFilterTemplate {}
 

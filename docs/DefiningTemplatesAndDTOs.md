@@ -20,7 +20,7 @@ Templates in Lissic can be defined by declaring the template text directly in co
 
 Templates are declared by applying an `attribute` to a `class`.  The template class must be `partial`.  If the class is nested inside other classes, all parent classes must also be `partial`.  The class does not need to have any members (e.g. properties, fields, methods).
 
-Templates will be rendered by outputting all of text exactly as it appears in the template, except for text contained inside tags.  Tags are identified by double curly brackets to both open and close the tag (e.g. `{{ myTag }}`).  For more information on the available template tags, see TemplateTags.md.
+Templates will be rendered by outputting all of the text exactly as it appears in the template, except for text contained inside tags.  Tags are identified by double curly brackets to both open and close the tag (e.g. `{{ myTag }}`).  For more information on the available template tags, see TemplateTags.md.
 
 Lissic handles all template text internally in UTF-8 and is compatible with any characters that are available in both .NET UTF-8 and .NET UTF-16 implementations.
 
@@ -91,11 +91,20 @@ MyPage myPage = new()
 */
 ```
 
+If path templates refer to a file outside of the template directory (e.g. `../../../OtherTemplates/template.html`), those files must be added as additional files in the project's `.csproj` file.  Example:
+```xml
+  <ItemGroup>
+    <AdditionalFiles Include="../../../OtherTemplates/template.html" />
+  </ItemGroup>
+```
+
+NOTE: Relative paths in `TemplatePath` declarations are relative to the template directory.  Relative paths for `AdditionalFiles` are usually relative to the project root.
+
 ---
 
 ### Initiating a Data Transfer Object (DTO)
 
-All template classes are automatically turned into DTOs for that class, via a source generator.  If you change the tags in a template, the source generator will automatically change the associated DTO properties.  New templates and recent changes may require a build for your IDE to be aware of the source generated properties.
+All template classes are automatically transformed into DTOs via a source generator.  The generated classes will inherit from the `LissicTemplate` base class.  If you change the tags in a template, the source generator will automatically change the associated DTO properties.  New templates and recent changes may require a build for your IDE to be aware of the source generated properties.
 
 To create a new DTO for a template, create a new instance of the template class.  All required values must be assigned when the template instance is created.  Values are required by default.  See TemplateTags.md for information on making tags, and their associated DTO properties, optional.
 
@@ -109,9 +118,9 @@ There are four `Type`s used for the properties that correspond to the four templ
 
 Variable properties will have a `VariableValue` type.  This is a specialized type that allows for any of the following types to be assigned:
 
-`bool`, `byte`, `sbyte`, `char`, `DateTimeOffset`, `decimal`, `double`, `float`, `Half`, `int`, `uint`, `Int128`, `UInt128`, `long`, `ulong`, `nint`, `nuint`, `ReadOnlySpan<byte>` (UTF-8 text), `short`, `ushort`, `string`
+`bool`, `byte`, `byte[]` (UTF-8 text), `sbyte`, `char`, `DateTimeOffset`, `decimal`, `double`, `float`, `Half`, `int`, `uint`, `Int128`, `UInt128`, `long`, `ulong`, `nint`, `nuint`, `ReadOnlyMemory<byte>` (UTF-8 text), `short`, `ushort`, `string`
 
-Each of those types has a default rendering.  `char`, `ReadOnlySpan<byte>`, and `string` will be rendered exactly as they are entered.  All of the numeric values will be rendered with text equivalent to their .NET string representation.  `DateTimeOffset` will be rendered according to .NET `"O"` formatting (equivalent to `"yyyy-MM-ddTHH:mm:ss.fffffffzzz"` as of this document's writing).
+Each of those types has a default rendering.  `char`, `ReadOnlyMemory<byte>`, and `string` will be rendered exactly as they are entered.  All of the numeric values will be rendered with text equivalent to their .NET string representation.  `DateTimeOffset` will be rendered according to .NET `"O"` formatting (equivalent to `"yyyy-MM-ddTHH:mm:ss.fffffffzzz"` as of this document's writing).
 
 The default rendering behavior can be changed by using a formatter.
 
@@ -132,7 +141,7 @@ TheDate today = new()
 // Will render similar to "The value of Pi is approximately 3.14."
 ```
 
-NOTE: `ReadOnlySpan<byte>` must contain UTF-8 text.  Behavior for assigning a `ReadOnlySpan<byte>` that does not contain UTF-8 text is undefined.
+NOTE: `byte[]` and `ReadOnlyMemory<byte>` must contain UTF-8 text.  Behavior for assigning a `byte[]` or `ReadOnlyMemory<byte>` that does not contain UTF-8 text is undefined.
 
 ##### Formatters
 
@@ -184,7 +193,9 @@ Welcome to Atlantis!
 
 ### Loop Values
 
-Loop values can have a `List<LissicTemplate>` of template classes assigned (i.e. classes with the `TemplateText` or `TemplatePath` attribute applied).  The templates in the list will be rendered, in order, in place of the loop tag.  The list can contain different types of templates.
+Loop values must be assigned a `List<LissicTemplate>`.  The list must contain template classes (i.e. classes with the `TemplateText` or `TemplatePath` attribute applied), and the templates in the list will be rendered, in order, in place of the loop tag.  The list can contain different types of templates.
+
+`LissicTemplate` is the base class for all generated templates.
 
 Example:
 ```csharp
