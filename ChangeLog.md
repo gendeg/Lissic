@@ -1,3 +1,9 @@
+#### Version 0.1.3 (2026-Oct-27)
+
+- Fix bytes written tracking (for max output size) when applying filters
+- Change custom filter interface to require returning bytes written; breaking changes like won't be included in patch version changes after Lissic has been shared with the community and won't be included in minor version changes after reaching 1.0.0
+
+
 #### Version 0.1.2 (2026-Oct-25)
 
 - Add documentation comments to template classes that list all generated properties
