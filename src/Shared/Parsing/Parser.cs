@@ -102,7 +102,7 @@ internal static class LissicParser
 
     internal static string ParseBranchLiteral(ReadOnlySpan<char> options, ref BranchParseState s, ReadOnlySpan<char> templateName, int parseIdx)
     {
-            StringBuilder litteralText = new();
+            StringBuilder literalText = new();
 
             int endText = options[s.pos..].IndexOf(';');
             if (endText == -1)
@@ -120,7 +120,7 @@ internal static class LissicParser
             // Handle ";;" escape sequence
             while(options[s.pos + endText + 1] == ';')
             {
-                litteralText.Append(options[s.pos..(s.pos + endText + 1)].ToString());
+                literalText.Append(options[s.pos..(s.pos + endText + 1)].ToString());
                 s.pos += endText + 2;
 
                 endText = options[s.pos..].IndexOf(';');
@@ -136,10 +136,10 @@ internal static class LissicParser
                     s.endCmdIdx = s.pos + endText + newClose;
                 }
             }
-            litteralText.Append(options[s.pos..(s.pos + endText)].ToString());
+            literalText.Append(options[s.pos..(s.pos + endText)].ToString());
             s.pos += endText + 1;
 
-            return litteralText.ToString();
+            return literalText.ToString();
     }
 
     internal static bool ParseBranchOption(ReadOnlySpan<char> options, ref BranchParseState s, ReadOnlySpan<char> templateName, bool isSourceGen, int parseIdx)
@@ -171,9 +171,9 @@ internal static class LissicParser
         if (options[s.pos] == '@')
         {
             s.pos++;
-            int litteralStartPos = parseIdx + s.pos;
-            string litteralText = ParseBranchLiteral(options, ref s, templateName, parseIdx);
-            s.branchOptions[keyValue] = Parse(litteralText, templateName, isSourceGen, litteralStartPos);
+            int literalStartPos = parseIdx + s.pos;
+            string literalText = ParseBranchLiteral(options, ref s, templateName, parseIdx);
+            s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, literalStartPos);
         }
 
         // Command branch value
@@ -359,26 +359,6 @@ internal static class LissicParser
         public int endCmdIdx;
         public int pos;
         public string keyName;
-    }
-}
-
-
-internal class ReadOnlyMemoryComparer : IEqualityComparer<ReadOnlyMemory<byte>>
-{
-    public static ReadOnlyMemoryComparer Instance { get; } = new();
-
-    public bool Equals(ReadOnlyMemory<byte> x, ReadOnlyMemory<byte> y) =>
-        x.Span.SequenceEqual(y.Span);
-
-    public int GetHashCode(ReadOnlyMemory<byte> obj)
-    {
-        ReadOnlySpan<byte> span = obj.Span;
-        unchecked
-        {
-            int hash = 17;
-            foreach (byte b in span) hash = hash * 31 + b;
-            return hash;
-        }
     }
 }
 

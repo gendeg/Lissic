@@ -17,7 +17,7 @@ public class ParseTemplateTests
     [Fact]
     public void Parse_EmptyString_ReturnsNoNodes()
     {
-        Assert.Empty(LissicParser.Parse("".AsSpan(), "TestTemplate"));
+        Assert.Empty(LissicParser.Parse("", "TestTemplate"));
     }
 
     [Fact]
@@ -351,6 +351,15 @@ public class ParseBranchTests
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse("{{branch.color[red=>@Red;]", "TestTemplate"));
     }
 
+    [Theory]
+    [InlineData("{{branch.status[}}")]
+    [InlineData("{{branch.status[a=>cmd; b}}")]
+    [InlineData("{{branch.status[a=>cmd; b=>")]
+    public void Parse_BranchWithUnclosedOptions_Throws(string template)
+    {
+        Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
+    }
+
     [Fact]
     public void Parse_BranchOptionKey_TrimsWhitespace()
     {
@@ -391,6 +400,12 @@ public class ParseBranchTests
     }
 
     [Fact]
+    public void Parse_BranchLiteralOption_EndingOnDoubleSemicolon_Throws()
+    {
+        Assert.Throws<TemplateParsingException>(() => LissicParser.Parse("{{branch.color[red=>@a;;]}}", "TestTemplate"));
+    }
+
+    [Fact]
     public void Parse_PermissibleWhitespaceInCommandTrimsCorrectly()
     {
         ITemplateNode[] nodes = LissicParser.Parse("{{  branch.color  [red=>name;]}}", "TestTemplate");
@@ -417,7 +432,7 @@ public class ParseBranchTests
     [InlineData("{{branch.color[ html =>@<div></div>; ] }}", "<div></div>")]
     [InlineData("{{branch.color[ html => @<div></div>; ] }}", "<div></div>")]
     [InlineData("{{branch.color[ html => @ <div></div> ; ] }}", " <div></div> ")]
-    public void Parse_BranchOptions_TrimsLitteralWhitespaceCorrectly(string template, string expectedResult)
+    public void Parse_BranchOptions_TrimsLiteralWhitespaceCorrectly(string template, string expectedResult)
     {
         ITemplateNode[] nodes = LissicParser.Parse(template, "TestTemplate");
         BranchNode branch = Assert.IsType<BranchNode>(Assert.Single(nodes));
@@ -485,6 +500,19 @@ public class ParseBranchTests
     }
 
     [Fact]
+    public void Parse_DoubleCloseBracketInLiteral_ParsesCorrectly()
+    {
+        ITemplateNode[] nodes = LissicParser.Parse("{{branch.greeting[a=>@x }} y }} z; b=>part.sub;]}}", "TestTemplate");
+        BranchNode branch = Assert.IsType<BranchNode>(nodes[0]);
+        Assert.True(branch.BranchEntries.ContainsKey("a"));
+        HtmlNode html = Assert.IsType<HtmlNode>(branch.BranchEntries["a"][0]);
+        Assert.Equal("x }} y }} z", Encoding.UTF8.GetString(html.Html.Span));
+        Assert.True(branch.BranchEntries.ContainsKey("b"));
+        PartNode part = Assert.IsType<PartNode>(branch.BranchEntries["b"][0]);
+        Assert.Equal("sub", part.Name);
+    }
+
+    [Fact]
     public void ParseTag_IgnoresQuestionMarks()
     {
         ITemplateNode[] nodes = LissicParser.Parse("{{ branch.color? [ red => name? ; ] }} some text here {{ branch.colorer? [ blue => part.namer? ; ] }}", "TestTemplate");
@@ -502,33 +530,5 @@ public class ParseBranchTests
         Assert.True(blueBranch.BranchEntries.ContainsKey("blue"));
         PartNode blueCommand = Assert.IsType<PartNode>(blueBranch.BranchEntries["blue"][0]);
         Assert.Equal("namer", blueCommand.Name);
-    }
-}
-
-
-public class ReadOnlyMemoryComparerTests
-{
-    [Fact]
-    public void Equals_SameByteContentFromDifferentArrays_ReturnsTrue()
-    {
-        ReadOnlyMemory<byte> a = Encoding.UTF8.GetBytes("red").AsMemory();
-        ReadOnlyMemory<byte> b = Encoding.UTF8.GetBytes("red").AsMemory();
-        Assert.True(ReadOnlyMemoryComparer.Instance.Equals(a, b));
-    }
-
-    [Fact]
-    public void Equals_DifferentByteContent_ReturnsFalse()
-    {
-        ReadOnlyMemory<byte> a = Encoding.UTF8.GetBytes("red").AsMemory();
-        ReadOnlyMemory<byte> b = Encoding.UTF8.GetBytes("blue").AsMemory();
-        Assert.False(ReadOnlyMemoryComparer.Instance.Equals(a, b));
-    }
-
-    [Fact]
-    public void GetHashCode_SameByteContentFromDifferentArrays_ProducesSameHash()
-    {
-        ReadOnlyMemory<byte> a = Encoding.UTF8.GetBytes("red").AsMemory();
-        ReadOnlyMemory<byte> b = Encoding.UTF8.GetBytes("red").AsMemory();
-        Assert.Equal(ReadOnlyMemoryComparer.Instance.GetHashCode(a), ReadOnlyMemoryComparer.Instance.GetHashCode(b));
     }
 }
