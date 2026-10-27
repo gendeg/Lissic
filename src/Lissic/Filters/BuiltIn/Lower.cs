@@ -11,7 +11,7 @@ namespace Lissic.Filters.BuiltIn;
 public class LowerFilter : IFilterFactory
 {
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new LowerFilter();
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         Span<byte> outSpan = output.GetSpan(input.Length * 2);
         Span<byte> buffer = stackalloc byte[4];
@@ -46,5 +46,6 @@ public class LowerFilter : IFilterFactory
             }
         }
         output.Advance(totalWritten);
+        return totalWritten;
     }
 }

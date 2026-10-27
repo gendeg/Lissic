@@ -14,20 +14,24 @@ public class ReplaceFilter(string needle, string replacement) : IFilterFactory
     private readonly ReadOnlyMemory<byte> replacement = Encoding.UTF8.GetBytes(replacement);
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new ReplaceFilter(args[0], args[1]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         int index = 0;
+        int bytesWritten = 0;
         while (index < input.Length)
         {
             int foundIndex = input[index..].IndexOf(needle.Span);
             if (foundIndex == -1)
             {
                 output.Write(input[index..]);
+                bytesWritten += input.Length - index;
                 break;
             }
             output.Write(input[index..(index + foundIndex)]);
             output.Write(replacement.Span);
+            bytesWritten += foundIndex + replacement.Span.Length;
             index += foundIndex + needle.Span.Length;
         }
+        return bytesWritten;
     }
 }

@@ -12,10 +12,11 @@ public class FilterRegistryTests
 
         public static ITemplateFilter Create(ReadOnlySpan<string> args) => new SuffixFilter(args.Length > 0 ? args[0] : "");
 
-        public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+        public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
         {
             output.Write(input);
             output.Write(Encoding.UTF8.GetBytes(suffix));
+            return input.Length + Encoding.UTF8.GetBytes(suffix).Length;
         }
     }
 
@@ -73,6 +74,6 @@ public class FilterRegistryTests
     private sealed class OtherFilter : IFilterFactory
     {
         public static ITemplateFilter Create(ReadOnlySpan<string> args) => new OtherFilter();
-        public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+        public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { return 0; }
     }
 }

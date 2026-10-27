@@ -11,14 +11,14 @@ public class BuiltInFiltersTests
 	[InlineData("", "tail", "tail")]
 	[InlineData("世界", "!", "世界!")]
 	public void Append_AddsTextAfterInput(string input, string text, string expected) =>
-		Assert.Equal(expected, Apply(input, new AppendFilter(text)));
+		AssertApply(input, new AppendFilter(text), expected);
 
 	[Theory]
 	[InlineData("hello", "pre-", "pre-hello")]
 	[InlineData("", "head", "head")]
 	[InlineData("世界", "前", "前世界")]
 	public void Prepend_AddsTextBeforeInput(string input, string text, string expected) =>
-		Assert.Equal(expected, Apply(input, new PrependFilter(text)));
+		AssertApply(input, new PrependFilter(text), expected);
 
 	[Theory]
 	[InlineData("hello world", "Hello world")]
@@ -28,7 +28,7 @@ public class BuiltInFiltersTests
 	[InlineData("éCOLE", "ÉCOLE")]
 	[InlineData("", "")]
 	public void Capitalize_UppercasesFirstLetter(string input, string expected) =>
-		Assert.Equal(expected, Apply(input, new CapitalizeFilter()));
+		AssertApply(input, new CapitalizeFilter(), expected);
 
 	[Theory]
 	[InlineData("HELLO World", "hello world")]
@@ -37,7 +37,7 @@ public class BuiltInFiltersTests
 	[InlineData("ÉCOLE", "école")]
 	[InlineData("", "")]
 	public void Lower_ConvertsTextToLowercase(string input, string expected) =>
-		Assert.Equal(expected, Apply(input, new LowerFilter()));
+		AssertApply(input, new LowerFilter(), expected);
 
 	[Theory]
 	[InlineData("hello WORLD", "HELLO WORLD")]
@@ -46,7 +46,7 @@ public class BuiltInFiltersTests
 	[InlineData("école", "ÉCOLE")]
 	[InlineData("", "")]
 	public void Upper_ConvertsTextToUppercase(string input, string expected) =>
-		Assert.Equal(expected, Apply(input, new UpperFilter()));
+		AssertApply(input, new UpperFilter(), expected);
 
 	[Theory]
 	[InlineData("one two two", "two", "one  ")]
@@ -55,7 +55,7 @@ public class BuiltInFiltersTests
 	[InlineData("世界世界", "世界", "")]
 	[InlineData("", "x", "")]
 	public void Remove_RemovesEveryOccurrence(string input, string needle, string expected) =>
-		Assert.Equal(expected, Apply(input, new RemoveFilter(needle)));
+		AssertApply(input, new RemoveFilter(needle), expected);
 
 	[Theory]
 	[InlineData("one two two", "two", "one  two")]
@@ -64,7 +64,7 @@ public class BuiltInFiltersTests
 	[InlineData("same", "same", "")]
 	[InlineData("", "x", "")]
 	public void RemoveFirst_RemovesOnlyTheFirstOccurrence(string input, string needle, string expected) =>
-		Assert.Equal(expected, Apply(input, new RemoveFirstFilter(needle)));
+		AssertApply(input, new RemoveFirstFilter(needle), expected);
 
 	[Theory]
 	[InlineData("one two two", "two", "one two ")]
@@ -73,7 +73,7 @@ public class BuiltInFiltersTests
 	[InlineData("same", "same", "")]
 	[InlineData("", "x", "")]
 	public void RemoveLast_RemovesOnlyTheLastOccurrence(string input, string needle, string expected) =>
-		Assert.Equal(expected, Apply(input, new RemoveLastFilter(needle)));
+		AssertApply(input, new RemoveLastFilter(needle), expected);
 
 	[Theory]
 	[InlineData("one two two", "two", "X", "one X X")]
@@ -82,7 +82,7 @@ public class BuiltInFiltersTests
 	[InlineData("abc", "b", "", "ac")]
 	[InlineData("", "x", "!", "")]
 	public void Replace_ReplacesEveryOccurrence(string input, string needle, string replacement, string expected) =>
-		Assert.Equal(expected, Apply(input, new ReplaceFilter(needle, replacement)));
+		AssertApply(input, new ReplaceFilter(needle, replacement), expected);
 
 	[Theory]
 	[InlineData("one two two", "two", "X", "one X two")]
@@ -91,7 +91,7 @@ public class BuiltInFiltersTests
 	[InlineData("abc", "b", "", "ac")]
 	[InlineData("", "x", "!", "")]
 	public void ReplaceFirst_ReplacesOnlyTheFirstOccurrence(string input, string needle, string replacement, string expected) =>
-		Assert.Equal(expected, Apply(input, new ReplaceFirstFilter(needle, replacement)));
+		AssertApply(input, new ReplaceFirstFilter(needle, replacement), expected);
 
 	[Theory]
 	[InlineData("one two two", "two", "X", "one two X")]
@@ -100,7 +100,7 @@ public class BuiltInFiltersTests
 	[InlineData("abc", "b", "", "ac")]
 	[InlineData("", "x", "!", "")]
 	public void ReplaceLast_ReplacesOnlyTheLastOccurrence(string input, string needle, string replacement, string expected) =>
-		Assert.Equal(expected, Apply(input, new ReplaceLastFilter(needle, replacement)));
+		AssertApply(input, new ReplaceLastFilter(needle, replacement), expected);
 
 	[Theory]
 	[InlineData("abc", "1", "abc")]
@@ -109,7 +109,7 @@ public class BuiltInFiltersTests
 	[InlineData("abc", "-2", "")]
 	[InlineData("", "3", "")]
 	public void Repeat_RepeatsInputTheRequestedNumberOfTimes(string input, string count, string expected) =>
-		Assert.Equal(expected, Apply(input, new RepeatFilter(count)));
+		AssertApply(input, new RepeatFilter(count), expected);
 
 	[Theory]
 	[InlineData("abcdef", "2", "3", "cde")]
@@ -124,7 +124,7 @@ public class BuiltInFiltersTests
     [InlineData("世界🙂世界", "-4", "1", "界")]
 	[InlineData("", "0", "0", "")]
 	public void Slice_ReturnsTheRequestedByteRange(string input, string start, string length, string expected) =>
-		Assert.Equal(expected, Apply(input, new SliceFilter(start, length)));
+		AssertApply(input, new SliceFilter(start, length), expected);
 
 	[Theory]
 	[InlineData("  hello \t", "hello")]
@@ -135,7 +135,7 @@ public class BuiltInFiltersTests
 	[InlineData("　hello ", "hello")]
 	[InlineData("", "")]
 	public void Trim_RemovesWhitespaceFromBothEnds(string input, string expected) =>
-		Assert.Equal(expected, Apply(input, new TrimFilter()));
+		AssertApply(input, new TrimFilter(), expected);
 
 	[Theory]
 	[InlineData("hello \t", "hello")]
@@ -145,7 +145,7 @@ public class BuiltInFiltersTests
 	[InlineData("hello ", "hello")]
 	[InlineData("", "")]
 	public void TrimEnd_RemovesWhitespaceFromTheEndOnly(string input, string expected) =>
-		Assert.Equal(expected, Apply(input, new TrimEndFilter()));
+		AssertApply(input, new TrimEndFilter(), expected);
 
 	[Theory]
 	[InlineData(" \thello", "hello")]
@@ -155,7 +155,7 @@ public class BuiltInFiltersTests
 	[InlineData(" hello", "hello")]
 	[InlineData("", "")]
 	public void TrimStart_RemovesWhitespaceFromTheStartOnly(string input, string expected) =>
-		Assert.Equal(expected, Apply(input, new TrimStartFilter()));
+		AssertApply(input, new TrimStartFilter(), expected);
 
 	[Theory]
 	[InlineData("abcdef", "3", "abc")]
@@ -167,7 +167,7 @@ public class BuiltInFiltersTests
     [InlineData("abcdef", "-10", "")]
 	[InlineData("", "3", "")]
 	public void Truncate_LimitsInputToTheMaximumLength(string input, string maxLength, string expected) =>
-		Assert.Equal(expected, Apply(input, new TruncateFilter(maxLength)));
+		AssertApply(input, new TruncateFilter(maxLength), expected);
 
 	[Fact]
 	public void BuiltInFilters_DoNotAllocateDuringApply()
@@ -221,10 +221,13 @@ public class BuiltInFiltersTests
 		}
 	}
 
-	private static string Apply(string input, ITemplateFilter filter)
+	private static void AssertApply(string input, ITemplateFilter filter, string expected)
 	{
 		ArrayBufferWriter<byte> output = new();
-		filter.Apply(Encoding.UTF8.GetBytes(input), output);
-		return Encoding.UTF8.GetString(output.WrittenSpan);
+		int bytesWritten = filter.Apply(Encoding.UTF8.GetBytes(input), output);
+		int expectedByteCount = Encoding.UTF8.GetByteCount(expected);
+		Assert.Equal(expectedByteCount, bytesWritten);
+		Assert.Equal(bytesWritten, output.WrittenCount);
+		Assert.Equal(expected, Encoding.UTF8.GetString(output.WrittenSpan));
 	}
 }

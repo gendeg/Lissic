@@ -20,7 +20,7 @@ public class SliceFilter : IFilterFactory
     }
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new SliceFilter(args[0], args[1]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         int startValue = _start;
         int lengthValue = Math.Max(0, _length);
@@ -64,5 +64,6 @@ public class SliceFilter : IFilterFactory
         }
 
         output.Write(input[startByteIndex..totalBytesConsumed]);
+        return totalBytesConsumed - startByteIndex;
     }
 }

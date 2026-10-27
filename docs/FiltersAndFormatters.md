@@ -173,7 +173,7 @@ TheDate today = new() { date = DateTimeOffset.UtcNow };
 To create a custom filter, create a class that implements `IFilterFactory` and apply the `FilterName` attribute.
 
 `IFilterFactory` requires two methods:
-- `void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)` - This method receives the current variable text as `input` and writes the transformed text to `output`.  This is the method that is called each time the filter is applied.
+- `int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)` - This method receives the current variable text as `input` and writes the transformed text to `output`.  It returns the number of bytes written.  This is the method that is called each time the filter is applied.
 - `static abstract ITemplateFilter Create(ReadOnlySpan<string> args)` - This method receives the arguments passed to the filter and returns an initialized instance of the filter class.  This method is run at startup, and the instance is stored for future use.
 
 The `FilterName` attribute must be applied to the class.  This attribute takes a single argument that defines the name of the filter.  For example, a filter class with the attribute `[FilterName("myFilter")]` would be accessed with `{{ variable <myFilter> }}`.  Custom filters can override a built-in filter by declaring the same name, but no two custom filters can have the same name.
@@ -189,10 +189,11 @@ public class AppendFilter(string text) : IFilterFactory
     private readonly ReadOnlyMemory<byte> text = Encoding.UTF8.GetBytes(text);
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new AppendFilter(args[0]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         output.Write(input);
         output.Write(text.Span);
+        return input.Length + text.Length;
     }
 }
 ```

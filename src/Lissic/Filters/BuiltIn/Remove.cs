@@ -13,19 +13,23 @@ public class RemoveFilter(string needle) : IFilterFactory
     private readonly ReadOnlyMemory<byte> needle = Encoding.UTF8.GetBytes(needle);
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new RemoveFilter(args[0]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         int index = 0;
+        int bytesWritten = 0;
         while (index < input.Length)
         {
             int foundIndex = input[index..].IndexOf(needle.Span);
             if (foundIndex == -1)
             {
                 output.Write(input[index..]);
+                bytesWritten += input.Length - index;
                 break;
             }
             output.Write(input[index..(index + foundIndex)]);
+            bytesWritten += foundIndex;
             index += foundIndex + needle.Span.Length;
         }
+        return bytesWritten;
     }
 }

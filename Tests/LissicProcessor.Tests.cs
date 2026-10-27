@@ -470,6 +470,44 @@ public class LissicProcessorTests
 		});
 
 	[Fact]
+	public Task RenderToBuffer_CountsLiteralVariableAndFilterBytesAtThreshold() =>
+		RunWithOptions(nameof(RenderToBuffer_CountsLiteralVariableAndFilterBytesAtThreshold), new LissicOptions
+		{
+			OutputSizeThreshold = 12
+		}, async () =>
+		{
+			using TestRig rig = await CreateRig("A{{plain}}/{{ value <lp-append(\"!\")> }}Z");
+			TestTemplate template = new TestTemplate(0).SetVariable("plain", "世界").SetVariable("value", "é");
+			ArrayBufferWriter<byte> writer = new();
+			const string expected = "A世界/é!Z";
+
+			rig.Processor.RenderToBuffer(template, writer);
+
+			Assert.Equal(expected, Encoding.UTF8.GetString(writer.WrittenSpan));
+			Assert.Equal(12, writer.WrittenCount);
+		});
+
+	[Fact]
+	public Task RenderToBuffer_ThrowsWhenTrackedMixedOutputExceedsThresholdByOneByte() =>
+		RunWithOptions(nameof(RenderToBuffer_ThrowsWhenTrackedMixedOutputExceedsThresholdByOneByte), new LissicOptions
+		{
+			OutputSizeThreshold = 11
+		}, async () =>
+		{
+			using TestRig rig = await CreateRig("A{{plain}}/{{ value <lp-append(\"!\")> }}Z");
+			TestTemplate template = new TestTemplate(0).SetVariable("plain", "世界").SetVariable("value", "é");
+			ArrayBufferWriter<byte> writer = new();
+			const string expected = "A世界/é!Z";
+
+			TemplateRenderException exception = Assert.Throws<TemplateRenderException>(
+				() => rig.Processor.RenderToBuffer(template, writer));
+
+			Assert.Contains("Output size exceeded the threshold of 11 bytes", exception.Message);
+			Assert.Equal(expected, Encoding.UTF8.GetString(writer.WrittenSpan));
+			Assert.Equal(12, writer.WrittenCount);
+		});
+
+	[Fact]
 	public Task AddLissicAsync_RegistersInitializedCacheAndProcessor() =>
 		RunInChildProcess(nameof(AddLissicAsync_RegistersInitializedCacheAndProcessor), async () =>
 		{
@@ -730,12 +768,13 @@ public class LissicProcessorTests
 	{
 		public static ITemplateFilter Create(ReadOnlySpan<string> args) => new UpperTestFilter();
 
-		public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+		public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
 		{
 			Span<byte> span = output.GetSpan(input.Length);
 			for (int i = 0; i < input.Length; i++)
 				span[i] = input[i] is >= (byte)'a' and <= (byte)'z' ? (byte)(input[i] - 32) : input[i];
 			output.Advance(input.Length);
+			return input.Length;
 		}
 	}
 
@@ -744,10 +783,11 @@ public class LissicProcessorTests
 		public static ITemplateFilter Create(ReadOnlySpan<string> args) =>
 			new AppendTestFilter(Encoding.UTF8.GetBytes(args.Length > 0 ? args[0] : ""));
 
-		public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+		public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
 		{
 			output.Write(input);
 			output.Write(suffix);
+			return input.Length + suffix.Length;
 		}
 	}
 
@@ -756,15 +796,18 @@ public class LissicProcessorTests
 		public static ITemplateFilter Create(ReadOnlySpan<string> args) =>
 			new DefaultTestFilter(Encoding.UTF8.GetBytes(args.Length > 0 ? args[0] : ""));
 
-		public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) =>
+		public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+		{
 			output.Write(input.IsEmpty ? fallback.AsSpan() : input);
+			return input.IsEmpty ? fallback.Length : input.Length;
+		}
 	}
 
 	private sealed class FailingTestFilter : IFilterFactory
 	{
 		public static ITemplateFilter Create(ReadOnlySpan<string> args) => throw new ArgumentException("bad filter argument");
 
-		public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+		public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { return 0; }
 	}
 
 	private sealed class AllocationFreeTemplate(int index) : LissicTemplate

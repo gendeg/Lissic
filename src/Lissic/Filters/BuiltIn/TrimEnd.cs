@@ -11,7 +11,7 @@ namespace Lissic.Filters.BuiltIn;
 public class TrimEndFilter : IFilterFactory
 {
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new TrimEndFilter();
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         int start = 0;
         int end = input.Length;
@@ -22,5 +22,6 @@ public class TrimEndFilter : IFilterFactory
         }
 
         output.Write(input[start..end]);
+        return end - start;
     }
 }

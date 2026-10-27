@@ -13,9 +13,10 @@ public class AppendFilter(string text) : IFilterFactory
     private readonly ReadOnlyMemory<byte> text = Encoding.UTF8.GetBytes(text);
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new AppendFilter(args[0]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         output.Write(input);
         output.Write(text.Span);
+        return input.Length + text.Length;
     }
 }

@@ -11,7 +11,7 @@ namespace Lissic.Filters.BuiltIn;
 public class CapitalizeFilter : IFilterFactory
 {
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new CapitalizeFilter();
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         Rune currentRune = default;
         Rune? upperRune = null;
@@ -31,7 +31,7 @@ public class CapitalizeFilter : IFilterFactory
         if (upperRune is null || upperRune == currentRune)
         {
             output.Write(input);
-            return;
+            return input.Length;
         }
 
         output.Write(input[..totalConsumed]);
@@ -41,5 +41,6 @@ public class CapitalizeFilter : IFilterFactory
         output.Write(buffer[..runeByteCount]);
 
         output.Write(input[(totalConsumed + bytesConsumed)..]); // use byte count from the removed Rune, in case upper and lower case differ in byte length
+        return input.Length - bytesConsumed + runeByteCount;
     }
 }

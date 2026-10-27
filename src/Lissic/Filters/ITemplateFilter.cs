@@ -6,10 +6,11 @@ namespace Lissic;
 /// <summary>
 /// A text transformation applied inline in a template, e.g. <c>{{ Name &lt;upper | pad("10") &gt; }}</c>.
 /// Input and output are UTF-8; no escaping is applied before or after.
+/// Returns the number of bytes written to the output.
 /// </summary>
 public interface ITemplateFilter
 {
-    void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output);
+    int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output);
 }
 
 
@@ -27,9 +28,10 @@ public interface IFilterFactory : ITemplateFilter
 /// </summary>
 internal sealed class UnknownFilter(string name) : ITemplateFilter
 {
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         UnknownTagDebug.Handle(output, $"Filter '{name}' not found");
         output.Write(input);
+        return input.Length;
     }
 }

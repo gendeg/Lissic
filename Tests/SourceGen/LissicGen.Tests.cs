@@ -36,21 +36,21 @@ namespace Tests.Filters
     public class UpperFilter : IFilterFactory
     {
         public static ITemplateFilter Create(ReadOnlySpan<string> args) => new UpperFilter();
-        public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+        public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { return 0; }
     }
 
     [FilterName("lower")]
     public class LowerFilter : IFilterFactory
     {
         public static ITemplateFilter Create(ReadOnlySpan<string> args) => new LowerFilter();
-        public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+        public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { return 0; }
     }
 
     [FilterName("pad")]
     public class PadFilter : IFilterFactory
     {
         public static ITemplateFilter Create(ReadOnlySpan<string> args) => new PadFilter();
-        public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+        public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { return 0; }
     }
 }
 

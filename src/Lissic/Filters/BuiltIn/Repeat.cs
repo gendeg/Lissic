@@ -13,15 +13,21 @@ public class RepeatFilter : IFilterFactory
 
     public RepeatFilter(string count)
     {
-        int.TryParse(count, out _count);
+        if (int.TryParse(count, out _count))
+        {
+            if (_count < 0) _count = 0;
+        }
+        else
+            _count = 0;
     }
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new RepeatFilter(args[0]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         for (int i = 0; i < _count; i++)
         {
             output.Write(input);
         }
+        return input.Length * _count;
     }
 }

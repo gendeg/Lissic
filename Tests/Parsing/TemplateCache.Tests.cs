@@ -248,7 +248,11 @@ public class TemplateCacheTests
 
 		public static ITemplateFilter Create(ReadOnlySpan<string> args) => new NoOpFilter(args.ToArray());
 
-		public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) => output.Write(input);
+		public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+		{
+			output.Write(input);
+			return input.Length;
+		}
 	}
 
 	private sealed class TestManifest(params TemplateEntry[] entries) : ITemplateManifest

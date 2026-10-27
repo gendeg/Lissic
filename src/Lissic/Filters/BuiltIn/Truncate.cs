@@ -18,7 +18,7 @@ public class TruncateFilter : IFilterFactory
     }
 
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new TruncateFilter(args[0]);
-    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
+    public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
         int idx = 0;
         int totalBytesConsumed = 0;
@@ -46,5 +46,6 @@ public class TruncateFilter : IFilterFactory
         }
 
         output.Write(input[..totalBytesConsumed]);
+        return totalBytesConsumed; 
     }
 }

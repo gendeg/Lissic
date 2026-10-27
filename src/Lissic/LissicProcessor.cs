@@ -158,8 +158,8 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
             filters[i].Apply(input.WrittenSpan, output);
             input = output;
         }
-        filters[^1].Apply(input.WrittenSpan, writer);
-        state.BytesWritten += (uint)input.WrittenSpan.Length;
+        int bytesWritten = filters[^1].Apply(input.WrittenSpan, writer);
+        state.BytesWritten += (uint)bytesWritten;
     }
 
     private void ProcessLoop(LoopNode loopNode, LissicTemplate template, IBufferWriter<byte> writer, ref RenderState state)
