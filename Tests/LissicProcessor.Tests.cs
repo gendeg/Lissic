@@ -1,3 +1,4 @@
+using Lissic.Filters.BuiltIn;
 using Lissic.Parsing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Buffers;
@@ -467,6 +468,29 @@ public class LissicProcessorTests
 			rig.Processor.RenderToBuffer(new TestTemplate(0), writer);
 
 			Assert.Equal("abcde", Encoding.UTF8.GetString(writer.WrittenSpan));
+		});
+
+	[Fact]
+	public Task RepeatFilter_EnforcesOutputSizeThreshold() =>
+		RunWithOptions(nameof(RepeatFilter_EnforcesOutputSizeThreshold), new LissicOptions
+		{
+			OutputSizeThreshold = 3
+		}, () =>
+		{
+			ArrayBufferWriter<byte> output = new();
+			RepeatFilter atThreshold = new("3");
+
+			Assert.Equal(3, atThreshold.Apply("x"u8, output));
+			Assert.Equal("xxx", Encoding.UTF8.GetString(output.WrittenSpan));
+
+			output.Clear();
+			RepeatFilter aboveThreshold = new("4");
+			TemplateRenderException exception = Assert.Throws<TemplateRenderException>(
+				() => aboveThreshold.Apply("x"u8, output));
+
+			Assert.Contains("Repeat filter will exceed the threshold of 3 bytes", exception.Message);
+			Assert.Equal(0, output.WrittenCount);
+			return Task.CompletedTask;
 		});
 
 	[Fact]

@@ -5,7 +5,7 @@ namespace Lissic;
 
 /// <summary>
 /// A text transformation applied inline in a template, e.g. <c>{{ Name &lt;upper | pad("10") &gt; }}</c>.
-/// Input and output are UTF-8; no escaping is applied before or after.
+/// Input and output are UTF-8; no escaping is applied before or after (with the exception of <c>htmlTextSafe</c> and <c>htmlAttrSafe</c> filters).
 /// Returns the number of bytes written to the output.
 /// </summary>
 public interface ITemplateFilter

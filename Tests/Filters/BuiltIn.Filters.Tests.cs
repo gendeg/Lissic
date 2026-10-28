@@ -57,6 +57,10 @@ public class BuiltInFiltersTests
 	public void Remove_RemovesEveryOccurrence(string input, string needle, string expected) =>
 		AssertApply(input, new RemoveFilter(needle), expected);
 
+	[Fact]
+	public void Remove_EmptyNeedleReturnsNoOutput_NoInfiniteLoop() =>
+		AssertApply("unchanged", new RemoveFilter(""), "");
+
 	[Theory]
 	[InlineData("one two two", "two", "one  two")]
 	[InlineData("aaaa", "aa", "aa")]
@@ -83,6 +87,10 @@ public class BuiltInFiltersTests
 	[InlineData("", "x", "!", "")]
 	public void Replace_ReplacesEveryOccurrence(string input, string needle, string replacement, string expected) =>
 		AssertApply(input, new ReplaceFilter(needle, replacement), expected);
+
+	[Fact]
+	public void Replace_EmptyNeedleReturnsNoOutput_NoInfiniteLoop() =>
+		AssertApply("unchanged", new ReplaceFilter("", "replacement"), "");
 
 	[Theory]
 	[InlineData("one two two", "two", "X", "one X two")]

@@ -16,6 +16,8 @@ public class ReplaceFilter(string needle, string replacement) : IFilterFactory
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new ReplaceFilter(args[0], args[1]);
     public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
+        if (needle.Length == 0) return 0;
+
         int index = 0;
         int bytesWritten = 0;
         while (index < input.Length)

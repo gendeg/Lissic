@@ -24,6 +24,9 @@ public class RepeatFilter : IFilterFactory
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new RepeatFilter(args[0]);
     public int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)
     {
+        if ((ulong)(input.Length * _count) > LissicConfig.OutputSizeThreshold)
+            throw new TemplateRenderException($"Repeat filter will exceed the threshold of {LissicConfig.OutputSizeThreshold} bytes.");
+
         for (int i = 0; i < _count; i++)
         {
             output.Write(input);
