@@ -169,6 +169,24 @@ public class BuiltInFiltersTests
 	public void Truncate_LimitsInputToTheMaximumLength(string input, string maxLength, string expected) =>
 		AssertApply(input, new TruncateFilter(maxLength), expected);
 
+	[Theory]
+	[InlineData("plain text", "plain text")]
+	[InlineData("&<", "&#x26;&#x3C;")]
+	[InlineData("1 & 2 < 3 > 0", "1 &#x26; 2 &#x3C; 3 > 0")]
+	[InlineData("<script>alert('x')</script>", "&#x3C;script>alert('x')&#x3C;/script>")]
+	[InlineData("世界&🙂<終", "世界&#x26;🙂&#x3C;終")]
+	public void HtmlTextSafe_EscapesAmpersandAndLessThanOnly(string input, string expected) =>
+		AssertApply(input, new HtmlTextSafe(), expected);
+
+	[Theory]
+	[InlineData("plain text", "plain text")]
+	[InlineData("&<>", "&#x26;&#x3C;&#x3E;")]
+	[InlineData("\"' /`", "&#x22;&#x27; &#x2F;&#x60;")]
+	[InlineData("<a href=\"/x\">", "&#x3C;a href=&#x22;&#x2F;x&#x22;&#x3E;")]
+	[InlineData("世界&🙂<終/`", "世界&#x26;🙂&#x3C;終&#x2F;&#x60;")]
+	public void HtmlAttributeSafe_EscapesDocumentedAttributeCharacters(string input, string expected) =>
+		AssertApply(input, new HtmlAttributeSafe(), expected);
+
 	[Fact]
 	public void BuiltInFilters_DoNotAllocateDuringApply()
 	{
@@ -176,6 +194,8 @@ public class BuiltInFiltersTests
 		[
 			new AppendFilter("!"),
 			new CapitalizeFilter(),
+			new HtmlAttributeSafe(),
+			new HtmlTextSafe(),
 			new LowerFilter(),
 			new PrependFilter("!"),
 			new RemoveFilter("a"),

@@ -52,6 +52,16 @@ Multiple filters can be applied to the same variable by separating the filters i
 **Arguments:** *none*
 **Use:** `{{ var <capitalize> }}`
 
+**Filter Name:** ***HtmlTextSafe***
+**Modification:** Escapes `&` and `<` for safe HTML text (e.g. `<div>This_Text_Is_Safe</div>`)
+**Arguments:** *none*
+**Use:** `{{ var <htmlTextSafe> }}`
+
+**Filter Name:** ***HtmlAttrSafe***
+**Modification:** Escapes `&`, `<`, `>`, `"`, `'`, `/`, and `` ` `` for safety in HTML text and HTML attributes (e.g. `<div>This_Text_Is_Safe</div>` and `<div attr='Safe'>`)
+**Arguments:** *none*
+**Use:** `{{ var <htmlAttrSafe> }}`
+
 **Filter Name:** ***Lower***
 **Modification:** Converts all letters in the text to lower case
 **Arguments:** *none*

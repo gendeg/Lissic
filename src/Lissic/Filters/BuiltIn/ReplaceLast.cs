@@ -7,7 +7,7 @@ namespace Lissic.Filters.BuiltIn;
 /// <summary>
 /// Replaces the last instance of the specified needle with the replacement text.
 /// </summary>
-[FilterName("replacelast")]
+[FilterName("replaceLast")]
 public class ReplaceLastFilter(string needle, string replacement) : IFilterFactory
 {
     private readonly ReadOnlyMemory<byte> needle = Encoding.UTF8.GetBytes(needle);

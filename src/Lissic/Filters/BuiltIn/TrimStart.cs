@@ -7,7 +7,7 @@ namespace Lissic.Filters.BuiltIn;
 /// <summary>
 /// Trims whitespace from the start of the input.
 /// </summary>
-[FilterName("trimstart")]
+[FilterName("trimStart")]
 public class TrimStartFilter : IFilterFactory
 {
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new TrimStartFilter();

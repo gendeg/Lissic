@@ -7,7 +7,7 @@ namespace Lissic.Filters.BuiltIn;
 /// <summary>
 /// Removes the first instance of the specified needle from the input.
 /// </summary>
-[FilterName("removefirst")]
+[FilterName("removeFirst")]
 public class RemoveFirstFilter(string needle) : IFilterFactory
 {
     private readonly ReadOnlyMemory<byte> needle = Encoding.UTF8.GetBytes(needle);

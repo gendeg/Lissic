@@ -7,7 +7,7 @@ namespace Lissic.Filters.BuiltIn;
 /// <summary>
 /// Trims whitespace from the end of the input.
 /// </summary>
-[FilterName("trimend")]
+[FilterName("trimEnd")]
 public class TrimEndFilter : IFilterFactory
 {
     public static ITemplateFilter Create(ReadOnlySpan<string> args) => new TrimEndFilter();

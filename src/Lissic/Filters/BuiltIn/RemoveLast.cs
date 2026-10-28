@@ -7,7 +7,7 @@ namespace Lissic.Filters.BuiltIn;
 /// <summary>
 /// Removes the last instance of the specified needle from the input.
 /// </summary>
-[FilterName("removelast")]
+[FilterName("removeLast")]
 public class RemoveLastFilter(string needle) : IFilterFactory
 {
     private readonly ReadOnlyMemory<byte> needle = Encoding.UTF8.GetBytes(needle);

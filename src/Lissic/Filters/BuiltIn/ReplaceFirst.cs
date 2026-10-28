@@ -7,7 +7,7 @@ namespace Lissic.Filters.BuiltIn;
 /// <summary>
 /// Replaces the first instance of the specified needle with the replacement text.
 /// </summary>
-[FilterName("replacefirst")]
+[FilterName("replaceFirst")]
 public class ReplaceFirstFilter(string needle, string replacement) : IFilterFactory
 {
     private readonly ReadOnlyMemory<byte> needle = Encoding.UTF8.GetBytes(needle);
