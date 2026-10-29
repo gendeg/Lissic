@@ -460,7 +460,7 @@ public partial class WelcomeMessage { }
 
         Diagnostic diagnostic = Assert.Single(driver.GetRunResult().Diagnostics);
         Assert.Equal("LISSIC008", diagnostic.Id);
-        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+        Assert.Equal(DiagnosticSeverity.Info, diagnostic.Severity);
         Assert.Contains("empty.html", diagnostic.GetMessage());
     }
 

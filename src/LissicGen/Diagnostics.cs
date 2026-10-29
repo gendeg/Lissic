@@ -51,5 +51,5 @@ internal static class Diagnostics
         "LISSIC008",
         "Empty template file",
         "Template file '{0}' is empty",
-        "Usage", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+        "Usage", DiagnosticSeverity.Info, isEnabledByDefault: true);
 }
