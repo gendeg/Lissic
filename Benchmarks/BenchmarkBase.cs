@@ -36,7 +36,11 @@ public abstract class BaseBenchmarks
     }
 
 
+    protected Catalog CatalogData = ComplexBenchmarkData.Create(Lorem);
+
     public abstract string Render();
+
+    public abstract string RenderCatalog();
 
     public const string LiquidProductTemplate = """
 <ul id='products'>

@@ -31,6 +31,17 @@ public class HandlebarsBenchmarks : BaseBenchmarks
         }
     }
 
+    private readonly HandlebarsTemplate<object, object> _catalogTemplate = CompileCatalog();
+
+    private static HandlebarsTemplate<object, object> CompileCatalog()
+    {
+        var handlebars = Handlebars.Create();
+        ComplexBenchmarkData.RegisterHelpers(handlebars);
+        return handlebars.Compile(ComplexTemplates.MustacheCatalogTemplate);
+    }
+
+    public override string RenderCatalog() => _catalogTemplate(CatalogData);
+
     public override string Render()
     {
         return _handlebarsTemplate(new

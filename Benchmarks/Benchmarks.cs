@@ -1,10 +1,11 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
 //using Microsoft.VSDiagnostics;
 
 
 namespace Benchmarks;
 
-[MemoryDiagnoser, ShortRunJob]
+[MemoryDiagnoser, GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory), ShortRunJob]
 //[CPUUsageDiagnoser]
 public class Benchmarks
 {
@@ -30,48 +31,104 @@ public class Benchmarks
         if (!BaseBenchmarks.CheckBenchmark(handlebars)) throw new Exception($"Handlebars failed: {handlebars[..100]}");
         if (!BaseBenchmarks.CheckBenchmark(scriban)) throw new Exception($"Scriban failed: {scriban[..100]}");
         if (!BaseBenchmarks.CheckBenchmark(razor)) throw new Exception($"Razor failed: {razor[..100]}");
+
+        string lissicC = lissicBenchmarks.RenderCatalog();
+        string dotLiquidC = dotLiquidBenchmarks.RenderCatalog();
+        string fluidC = fluidBenchmarks.RenderCatalog();
+        string handlebarsC = handlebarsBenchmarks.RenderCatalog();
+        string scribanC = scribanBenchmarks.RenderCatalog();
+        string razorC = razorSlicesBenchmarks.RenderCatalog();
+
+        if (!ComplexBenchmarkData.CheckBenchmark(lissicC)) throw new Exception($"Lissic catalog failed: {lissicC[..100]}");
+        if (!ComplexBenchmarkData.CheckBenchmark(dotLiquidC)) throw new Exception($"DotLiquid catalog failed: {dotLiquidC[..100]}");
+        if (!ComplexBenchmarkData.CheckBenchmark(fluidC)) throw new Exception($"Fluid catalog failed: {fluidC[..100]}");
+        if (!ComplexBenchmarkData.CheckBenchmark(handlebarsC)) throw new Exception($"Handlebars catalog failed: {handlebarsC[..100]}");
+        if (!ComplexBenchmarkData.CheckBenchmark(scribanC)) throw new Exception($"Scriban catalog failed: {scribanC[..100]}");
+        if (!ComplexBenchmarkData.CheckBenchmark(razorC)) throw new Exception($"Razor catalog failed: {razorC[..100]}");
     }
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true), BenchmarkCategory("Small")]
     public string Lissic_RenderToString()
     {
         return lissicBenchmarks.Render();
     }
 
-    [Benchmark]
+    [Benchmark, BenchmarkCategory("Small")]
     public void Lissic_RenderToBuffer()
     {
         lissicBenchmarks.RenderToBuffer();
     }
 
-    [Benchmark]
+    [Benchmark, BenchmarkCategory("Small")]
     public string DotLiquid_Render()
     {
         return dotLiquidBenchmarks.Render();
     }
 
-    [Benchmark]
+    [Benchmark, BenchmarkCategory("Small")]
     public string Fluid_Render()
     {
         return fluidBenchmarks.Render();
     }
 
-    [Benchmark]
+    [Benchmark, BenchmarkCategory("Small")]
     public async Task RazorSlices_RenderToBuffer()
     {
         await razorSlicesBenchmarks.RenderToResult();
     }
 
-    [Benchmark]
+    [Benchmark, BenchmarkCategory("Small")]
     public string Scriban_Render()
     {
         return scribanBenchmarks.Render();
     }
 
-    [Benchmark]
+    [Benchmark, BenchmarkCategory("Small")]
     public string Handlebars_Render()
     {
         return handlebarsBenchmarks.Render();
+    }
+
+    [Benchmark(Baseline = true), BenchmarkCategory("Large")]
+    public string Lissic_Catalog_RenderToString()
+    {
+        return lissicBenchmarks.RenderCatalog();
+    }
+
+    [Benchmark, BenchmarkCategory("Large")]
+    public void Lissic_Catalog_RenderToBuffer()
+    {
+        lissicBenchmarks.RenderCatalogToBuffer();
+    }
+
+    [Benchmark, BenchmarkCategory("Large")]
+    public string DotLiquid_Catalog_Render()
+    {
+        return dotLiquidBenchmarks.RenderCatalog();
+    }
+
+    [Benchmark, BenchmarkCategory("Large")]
+    public string Fluid_Catalog_Render()
+    {
+        return fluidBenchmarks.RenderCatalog();
+    }
+
+    [Benchmark, BenchmarkCategory("Large")]
+    public async Task RazorSlices_Catalog_RenderToBuffer()
+    {
+        await razorSlicesBenchmarks.RenderCatalogToResult();
+    }
+
+    [Benchmark, BenchmarkCategory("Large")]
+    public string Scriban_Catalog_Render()
+    {
+        return scribanBenchmarks.RenderCatalog();
+    }
+
+    [Benchmark, BenchmarkCategory("Large")]
+    public string Handlebars_Catalog_Render()
+    {
+        return handlebarsBenchmarks.RenderCatalog();
     }
 }
 

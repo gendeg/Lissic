@@ -13,6 +13,8 @@ public class RazorSlicesBenchmarks : BaseBenchmarks
     {
         ms = new MemoryStream();
         buffer = PipeWriter.Create(ms);
+        catalogMs = new MemoryStream();
+        catalogBuffer = PipeWriter.Create(catalogMs);
     }
 
     private static async Task RenderHelper(RazorSlice slice, PipeWriter thisBuffer)
@@ -31,6 +33,27 @@ public class RazorSlicesBenchmarks : BaseBenchmarks
         using StreamReader reader = new(thisMs, Encoding.UTF8);
         return reader.ReadToEnd();
     }
+
+    public override string RenderCatalog()
+    {
+        MemoryStream thisMs = new();
+        PipeWriter thisBuffer = PipeWriter.Create(thisMs);
+        using RazorSlice slice = Slices.Catalog.Create(CatalogData);
+        RenderHelper(slice, thisBuffer).GetAwaiter().GetResult();
+        thisMs.Position = 0;
+        using StreamReader reader = new(thisMs, Encoding.UTF8);
+        return reader.ReadToEnd();
+    }
+
+    public async Task RenderCatalogToResult()
+    {
+        catalogMs.Position = 0;
+        using RazorSlice slice = Slices.Catalog.Create(CatalogData);
+        await slice.RenderAsync(catalogBuffer);
+    }
+
+    private readonly MemoryStream catalogMs;
+    private readonly PipeWriter catalogBuffer;
 
     public async Task RenderToResult()
     {
