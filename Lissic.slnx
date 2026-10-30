@@ -3,6 +3,7 @@
     <Project Path="Tests/Tests.csproj" />
     <Project Path="Tests/PackageTests/PackageTests.csproj" />
   </Folder>
+  <Project Path="Benchmarks/Benchmarks.csproj" />
   <Project Path="src/Lissic/Lissic.csproj" />
   <Project Path="src/LissicGen/LissicGen.csproj" />
 </Solution>

@@ -5,3 +5,4 @@
 **/*.g.received.cs
 /Tests/PackageTests/Packages/*.nupkg
 /Tests/PackageTests/Packages/*.snupkg
+/Benchmarks/BenchmarkDotNet.Artifacts
