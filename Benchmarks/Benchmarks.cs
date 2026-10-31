@@ -5,7 +5,9 @@ using BenchmarkDotNet.Configs;
 
 namespace Benchmarks;
 
-[MemoryDiagnoser, GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory), ShortRunJob]
+[GcServer(true)]
+[GcConcurrent(false)]
+[MemoryDiagnoser, GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 //[CPUUsageDiagnoser]
 public class Benchmarks
 {
@@ -46,6 +48,17 @@ public class Benchmarks
         if (!ComplexBenchmarkData.CheckBenchmark(scribanC)) throw new Exception($"Scriban catalog failed: {scribanC[..100]}");
         if (!ComplexBenchmarkData.CheckBenchmark(razorC)) throw new Exception($"Razor catalog failed: {razorC[..100]}");
     }
+
+    // Uncomment to get consistent memory use reporting at the expense of completely unreliable run times and no GC data
+    /*
+    [IterationCleanup]
+    public void Cleanup()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+    */
 
     [Benchmark(Baseline = true), BenchmarkCategory("Small")]
     public string Lissic_RenderToString()
@@ -131,4 +144,3 @@ public class Benchmarks
         return handlebarsBenchmarks.RenderCatalog();
     }
 }
-
