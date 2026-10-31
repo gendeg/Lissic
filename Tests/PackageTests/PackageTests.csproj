@@ -13,10 +13,13 @@
 
     <LissicTemplateRoot>TestTemplates</LissicTemplateRoot>
     <LissicTemplateSourceRoot>../Templates/TestTemplates</LissicTemplateSourceRoot>
+
+    <!-- Pre-release version that can never collide with a package published on nuget.org -->
+    <LissicLocalVersion>0.0.0-local</LissicLocalVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lissic" Version="*" />
+    <PackageReference Include="Lissic" Version="$(LissicLocalVersion)" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="xunit.v3" Version="4.0.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
@@ -29,7 +32,7 @@
     <AdditionalFiles Include="../Templates/header.html" />
   </ItemGroup>
 
-  <!-- Create full-path template for tests based on project directory -->
+  <!-- Create full-path template for tests based on the actual project directory -->
   <Target Name="GenerateFullPathTemplate" BeforeTargets="BeforeCompile;CoreCompile">
     <PropertyGroup>
       <_FullPathTemplateFile>$(IntermediateOutputPath)FullPathTemplate.g.cs</_FullPathTemplateFile>
@@ -53,7 +56,7 @@ public partial class ImportedPackageTests
   <!-- Ensure latest version of Lissic is packed before restore -->
   <Target Name="PackLissic" BeforeTargets="Restore;ClearLocalNuGetCache" Condition="'$(BuildingSolutionFile)' != 'true'">
     <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)../../src/LissicGen/LissicGen.csproj&quot; -c $(Configuration)" />
-    <Exec Command="dotnet pack &quot;$(MSBuildThisFileDirectory)../../src/Lissic/Lissic.csproj&quot; -c $(Configuration) -o &quot;$(MSBuildThisFileDirectory)Packages&quot;" />
+    <Exec Command="dotnet pack &quot;$(MSBuildThisFileDirectory)../../src/Lissic/Lissic.csproj&quot; -c $(Configuration) -p:Version=$(LissicLocalVersion) -o &quot;$(MSBuildThisFileDirectory)Packages&quot;" />
   </Target>
 
   <Target Name="ClearLocalNuGetCache" BeforeTargets="Restore">

@@ -1,0 +1,90 @@
+@inherits RazorSlices.RazorSlice<Benchmarks.Catalog>
+@functions {
+    static string Trunc(string s, int n) => s.Length > n ? s[..(n - 3)] + "..." : s;
+    static string Cap(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+}
+<div id='catalog'>
+  <header>
+    <h1>@Model.Title.ToUpperInvariant()</h1>
+    <p class='subtitle'>@Trunc(Model.Subtitle, 60)</p>
+  </header>
+@foreach (var category in Model.Categories)
+{
+  <section class='category@(category.IsFeatured ? " featured" : "")' id='@category.Slug'>
+    <h2>@Cap(category.Name)</h2>
+    <p class='crumb'>Browse: @category.Slug.Replace("-", " ")</p>
+    <p class='summary'>@Trunc(category.Summary, 40)</p>
+    @if (category.HasProducts)
+    {
+    <ul class='products'>
+    @foreach (var product in category.Products)
+    {
+      <li class='product@(product.IsNew ? " new" : "")' data-sku='@product.Sku.ToLowerInvariant()'>
+        <h3>@product.Title</h3>
+        <span class='brand'>@product.Brand.ToUpperInvariant()</span>
+        @if (product.OnSale)
+        {
+        <p class='price sale'>Now @product.Price <del>Was @product.ListPrice</del></p>
+        }
+        else
+        {
+        <p class='price'>Only @product.Price</p>
+        }
+        @if (product.InStock)
+        {
+        <span class='stock in'>In stock</span>
+        }
+        else
+        {
+        <span class='stock out'>Sold out</span>
+        }
+        <p class='description'>@Trunc(product.Description, 80)</p>
+        @if (product.HasTags)
+        {
+        <p class='tags'>
+        @foreach (var tag in product.Tags)
+        {
+          <a href='/tag/@tag.Label.ToLowerInvariant()'>@tag.Label.ToUpperInvariant()</a>@(tag.IsLast ? "" : ",")
+        }
+        </p>
+        }
+        @if (product.HasVariants)
+        {
+        <table class='variants'>
+        @foreach (var variant in product.Variants)
+        {
+          <tr class='@(variant.VariantAvailable ? "available" : "unavailable")'>
+            <td>@variant.VariantSku.ToLowerInvariant()</td>
+            <td>@Cap(variant.Color)</td>
+            <td>@variant.Size.ToUpperInvariant()</td>
+            <td>@(variant.VariantAvailable ? "Yes" : "No")</td>
+          </tr>
+        }
+        </table>
+        }
+        @if (product.HasReviews)
+        {
+        <div class='reviews'>
+        @foreach (var review in product.Reviews)
+        {
+          <blockquote>
+            <h4>@Cap(review.ReviewTitle)</h4>
+            <span class='rating'>@review.Rating</span>@if (review.Verified) {<text> <em>Verified</em></text>}
+            <p>@Trunc(review.Body, 50)</p>
+            <cite>@review.Author</cite>
+          </blockquote>
+        }
+        </div>
+        }
+      </li>
+    }
+    </ul>
+    }
+    else
+    {
+    <p class='empty'>No products</p>
+    }
+  </section>
+}
+  <footer>@Trunc(Model.FooterNote, 40)</footer>
+</div>

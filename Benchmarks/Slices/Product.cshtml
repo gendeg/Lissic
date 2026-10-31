@@ -1,0 +1,10 @@
+@inherits RazorSlices.RazorSlice<List<Benchmarks.Item>>
+<ul id='products'>
+@("  ")@foreach (var product in Model) {<text>
+    <li>
+      <h2>@product.Name</h2>
+           Only @product.Price
+           @((string)(product.Description.Length > 15 ? product.Description[..12] + "..." : product.Description))
+    </li>
+  </text>}
+</ul>
