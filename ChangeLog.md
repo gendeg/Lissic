@@ -1,3 +1,9 @@
+#### Version 0.1.5 (2026-Nov-04)
+
+- Change `LISSIC008` (Empty Template File) severity from Warning to Info
+- The GitHub repository now has a Benchmark project that shows the performance comparison code; this does not affect the library itself
+
+
 #### Version 0.1.4 (2026-Oct-28)
 
 - Add `htmlTextSafe` and `htmlAttrSafe` built-in filters

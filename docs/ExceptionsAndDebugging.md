@@ -53,7 +53,7 @@ The `TemplateCache` class has a `ReloadPathTemplates` method to reload file-base
 
 ##### LISSIC008 - EmptyTemplateFile
 
-*Warning* - The file identified by a `TemplatePath` attribute is empty.
+*Info* - The file identified by a `TemplatePath` attribute is empty.
 
 ---
 
