@@ -78,7 +78,7 @@ In the parent template, the branch is assigned a text key value.  The key value 
 ```
    "branchName" is assigned either "key1" or "key2" in the parent template
              ↓
-{{ branch.branchName [key1=>action1; key2=>action2] }}
+{{ branch.branchName [key1=>action1; key2=>action2;] }}
                        ↑              ↑
     the action is selected based on the key passed to "branchName"
 ```

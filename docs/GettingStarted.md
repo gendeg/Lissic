@@ -154,7 +154,7 @@ We look forward to seeing you there!  Please consider signing up to be a member 
 
 Best Wishes,
 
-Julius Caesar
+George Washington
 Founder, Templating Mania
 */
 ```

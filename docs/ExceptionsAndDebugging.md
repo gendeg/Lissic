@@ -37,7 +37,7 @@ The `TemplateCache` class has a `ReloadPathTemplates` method to reload file-base
 
 ##### LISSIC004 - FilterIsNotAccessible
 
-*Error* - A filter is declared that is either not accessable (e.g. private), or is contained inside another type that is not accessible.
+*Error* - A filter is declared that is either not accessible (e.g. private), or is contained inside another type that is not accessible.
 
 ##### LISSIC005 - InvalidTemplate
 

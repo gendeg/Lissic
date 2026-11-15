@@ -33,7 +33,7 @@ using Lissic;
 [TemplateText("Hello {{ name }}!")]
 public partial class SimpleTemplate {}
 
-public class ProcessorDemo(LissicProcessor processor)
+public class ProcessorDemo(LissicProcessor lissicProcessor)
 {
     public void Execute(IBufferWriter<byte> writer)
     {

@@ -69,7 +69,7 @@ The benchmarks below use Fluid's standard benchmarking job, which creates an HTM
 
 ##### Large Benchmark
 
-Renders a "Catalog" page with 96 produsts in 8 categories.  Each product has 4 tags, 3 variants in a table, and 3 reviews.  The benchmark features nested loops, boolean decisions, and several common filters.
+Renders a "Catalog" page with 96 products in 8 categories.  Each product has 4 tags, 3 variants in a table, and 3 reviews.  The benchmark features nested loops, boolean decisions, and several common filters.
 
 | Method                     | Mean         | Error      | Ratio | Gen0     | Gen1    | Gen2    | Allocated  | Alloc Ratio |
 |----------------------------|-------------:|-----------:|------:|---------:|--------:|--------:|-----------:|------------:|
@@ -81,7 +81,7 @@ Renders a "Catalog" page with 96 produsts in 8 categories.  Each product has 4 t
 | RazorSlices_RenderToBuffer |   191.728 us |  1.4913 us |  0.85 |   5.3711 |  0.2441 |  0.2441 |   199176 B |        0.54 |
 | Scriban_Render             | 1,302.858 us | 13.3290 us |  5.77 |  23.4375 | 23.4375 | 23.4375 |  1776696 B |        4.82 |
 
-<sup>*All benchmarks were captured with BenchmarkDotNet, on a 9800X3D with 32GB of RAM, using the latest versions of each library (as of 30 Oct 2026, including pre-release verion for Fluid)*</sup>
+<sup>*All benchmarks were captured with BenchmarkDotNet, on a 9800X3D with 32GB of RAM, using the latest versions of each library (as of 30 Oct 2026, including pre-release version for Fluid)*</sup>
 
 ---
 

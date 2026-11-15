@@ -213,7 +213,7 @@ public partial class Realization {}
 Realization real = new();
 
 
-[TemplateText("I have several things I want to say...\n{{part.theMessages}}")]
+[TemplateText("I have several things I want to say...\n{{loop.theMessages}}")]
 public partial class Messages {}
 
 List<LissicTemplate> msgList = [welcome, welcome2, real];
