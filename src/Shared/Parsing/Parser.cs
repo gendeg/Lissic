@@ -15,6 +15,58 @@ internal static class LissicParser
         return true;
     }
 
+    internal static int FindOptionEnd(ReadOnlySpan<char> options, int start)
+    {
+        int idx = start;
+        int depth = 0;
+
+        while (idx < options.Length)
+        {
+            char c = options[idx];
+
+            switch (c)
+            {
+                case ',':
+                case ']':
+                case ';':
+                    if (depth == 0) // Found the end of the option
+                        return idx;
+                    idx++;
+                    break;
+                case '"':
+                case '\'':
+                    while (idx < options.Length)
+                    {
+                        idx++;
+                        if (idx < options.Length && options[idx] == c)
+                        {
+                            idx++;
+                            if (idx < options.Length && options[idx] == c)
+                                continue;
+                            else
+                                break;
+                        }
+                    }
+                    break;
+                case '(':
+                    depth++;
+                    idx++;
+                    break;
+                case ')':
+                    if (depth <= 0)
+                        return -2;
+                    depth--;
+                    idx++;
+                    break;
+                default:
+                    idx++;
+                    break;
+            }
+        }
+
+        return -1;
+    }
+
     internal static ITemplateNode[] Parse(
         ReadOnlySpan<char> partText, 
         ReadOnlySpan<char> templateName, 
@@ -311,10 +363,16 @@ internal static class LissicParser
         // Command branch value
         else
         {
-            int semicolon = options[s.pos..].IndexOf(';');
+            int semicolon = options[s.pos..s.endCmdIdx].IndexOf(';');
             if (s.oldSyntax == null)
             {
-                if (semicolon != -1) // TODO: skip characters inside literals
+                int optionEnd = FindOptionEnd(options, s.pos);
+                if (optionEnd == -2)
+                    throw new TemplateParsingException($"Option for branch '{s.keyName}' in template: {templateName.ToString()}, near position: {parseIdx + s.pos}, contains an extra ')'.");
+                if (optionEnd == -1)
+                    throw new TemplateParsingException($"Option for branch '{s.keyName}' in template: {templateName.ToString()}, near position: {parseIdx + s.pos}, is not closed properly.");
+                
+                if (optionEnd < options.Length && options[optionEnd] == ';')
                     s.oldSyntax = true;
                 else
                     s.oldSyntax = false;
