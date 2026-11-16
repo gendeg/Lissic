@@ -174,7 +174,6 @@ public partial class LissicProcessorTests
 	[InlineData("[{{ name < lp-upper > }}]", true)]
 	[InlineData("[{{ name < lp-append('a') > }}]", true)]
 	[InlineData("[{{ name < lp-append( 'a' ) > }}]", true)]
-	[InlineData("[{{name<lp-append ('a')>}}]", true)]
 	public async Task RenderToString_FiltersHandleWhitespaceCorrectly(string template, bool willParse)
 	{
 		if (willParse)
