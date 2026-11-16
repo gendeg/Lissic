@@ -69,13 +69,8 @@ internal static class LissicParser
                 }
 
                 int length = endTag;
-                if (enclosedInParens)
-                {
-                    while (char.IsWhiteSpace(partText[pos + --length])) {}
-                    
-                    if (partText[pos + length] != ')')
-                        throw new TemplateParsingException($"Expected ')' in template: {templateName.ToString()}, near position: {parseIdx + pos}.");
-                }
+                if (enclosedInParens && !FindEndParen(partText[pos..], ref length))
+                    throw new TemplateParsingException($"Expected ')' in template: {templateName.ToString()}, near position: {parseIdx + pos}.");
 
                 ReadOnlySpan<char> tag = partText[pos..(pos + length)];
                 nodes.Add(ParseTag(tag, templateName, parseIdx + pos));

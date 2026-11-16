@@ -284,7 +284,7 @@ public partial class LissicProcessorTests
 		});
 
 
-	/* Branches: other branches as direct actions */
+	/* Branches: other branches as direct actions
 
 	[Theory]
 	[InlineData("a", "x", "X")]
