@@ -95,11 +95,12 @@ internal static class LissicParser
             enclosedInParens = enclosedInParens,
             // NOTE: endCmdIdx is the end index relative to the original span
             // This allows pos, and pos offsets, to be directly compared to endCmdIdx without needing to adjust both as we go
-            endTagIdx = branch.IndexOf("}}")
+            endTagIdx = branch.IndexOf("}}"),
+            hasDefault = false
         };
+        s.endCmdIdx = s.endTagIdx;
         if (s.endTagIdx == -1)
             throw new TemplateParsingException($"Unclosed branch tag in template: {templateName.ToString()}, near position: {parseIdx - 2}.");
-        s.endCmdIdx = s.endTagIdx;
 
         if (enclosedInParens && !FindEndParen(branch, ref s.endCmdIdx))
             throw new TemplateParsingException($"Expected ')' in template: {templateName.ToString()}, near position: {parseIdx + s.pos}.");
@@ -132,7 +133,7 @@ internal static class LissicParser
         s.branchOptions = new(2);
         while (ParseBranchOption(branch, ref s, templateName, isSourceGen, parseIdx)) {}
 
-        return (new BranchNode(s.keyName, s.branchOptions, required), s.pos);
+        return (new BranchNode(s.keyName, s.branchOptions, required, !(s.oldSyntax ?? false) && s.branchOptions.ContainsKey("_")), s.pos);
     }
 
     internal static string ParseBranchLiteral(ReadOnlySpan<char> options, ref BranchParseState s, char quoteType, ReadOnlySpan<char> templateName, int parseIdx)
@@ -201,6 +202,7 @@ internal static class LissicParser
             if (newClose == -1)
                 throw new TemplateParsingException($"Unclosed branch tag in template: {templateName.ToString()}, near position: {parseIdx - 2}.");
             s.endTagIdx = s.pos + endText + newClose;
+            s.endCmdIdx = s.endTagIdx;
         }
         
         // Handle ";;" escape sequence
@@ -220,6 +222,7 @@ internal static class LissicParser
                 if (newClose == -1)
                     throw new TemplateParsingException($"Unclosed branch tag in template: {templateName.ToString()}, near position: {parseIdx - 2}.");
                 s.endTagIdx = s.pos + endText + newClose;
+                s.endCmdIdx = s.endTagIdx;
             }
         }
         literalText.Append(options[s.pos..(s.pos + endText)].ToString());
@@ -547,6 +550,9 @@ internal static class LissicParser
 
     internal static ITemplateNode ParseTag(ReadOnlySpan<char> tag, ReadOnlySpan<char> templateName, int parseIdx)
     {
+        if (tag[0] == '(' && tag[^1] == ')')
+            return ParseTag(tag[1..^1], templateName, parseIdx);
+
         int period = tag.IndexOf('.');
         int lessThan = tag.IndexOf('<');
         int pipe = tag.IndexOf('|');
@@ -642,6 +648,7 @@ internal static class LissicParser
         public bool enclosedInParens;
         public int endCmdIdx;
         public int endTagIdx;
+        public bool hasDefault;
         public string keyName;
         public bool? oldSyntax;
         public int pos;

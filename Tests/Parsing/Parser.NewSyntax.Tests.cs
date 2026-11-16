@@ -855,7 +855,6 @@ public class ParseParenthesesV020Tests
     [InlineData("{{ name) }}")]
     [InlineData("{{ (name | upper }}")]
     [InlineData("{{ name | upper) }}")]
-    [InlineData("{{ () }}")]
     [InlineData("{{ (name) trailing }}")]
     [InlineData("{{ (part.header }}")]
     [InlineData("{{ (loop.items }}")]

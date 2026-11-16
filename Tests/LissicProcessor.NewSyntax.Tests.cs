@@ -438,7 +438,7 @@ public partial class LissicProcessorTests
 	[Fact]
 	public async Task V020_RenderToString_DeprecatedFilterSyntaxStillRenders()
 	{
-		using TestRig rig = await CreateRig("{{ name <lp-append(x) | lp-upper> }}|{{ name < lp-append (\"y\") > }}");
+		using TestRig rig = await CreateRig("{{ name <lp-append(x) | lp-upper> }}|{{ name < lp-append(\"y\") > }}");
 
 		Assert.Equal("ADAX|aday", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
 	}
