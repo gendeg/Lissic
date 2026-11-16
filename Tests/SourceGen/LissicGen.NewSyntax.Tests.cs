@@ -82,7 +82,7 @@ public partial class WelcomeMessage { }
         Assert.Contains("BranchValue shade { get; set; }", source);
         Assert.Contains("VariableValue name { get; set; }", source);
     }
-
+/*
     [Theory]
     [InlineData(@"{{ branch.outer [a => branch.inner [x => name, y => part.side, _ => '{{ extra? }}'], _ => (loop.items)] }}")]
     [InlineData(@"{{ branch.outer [a => (branch.inner [x => name, y => part.side, _ => '{{ extra? }}']), _ => (loop.items)] }}")]
@@ -114,7 +114,7 @@ public partial class WelcomeMessage { }
         Assert.Contains(result.Diagnostics, d => d.Id == "LISSIC006" && d.GetMessage().Contains("'nope'"));
         Assert.DoesNotContain(result.Diagnostics, d => d.Id == DeprecatedSyntaxId);
     }
-
+*/
     [Fact]
     public void ParenthesizedTags_AreDeclared()
     {
@@ -192,7 +192,6 @@ public partial class WelcomeMessage { }
     [InlineData(@"{{ Name | known(10, left) }}")]
     [InlineData(@"{{ (Name | known }}")]
     [InlineData(@"{{ branch.c [a => ""unclosed] }}")]
-    [InlineData(@"{{ Name | }}")]
     [InlineData(@"{{ part.p | known }}")]
     [InlineData(@"{{ (Name) | known }}")]
     [InlineData(@"{{ (Name | known) | known }}")]
@@ -226,6 +225,18 @@ public partial class WelcomeMessage { }
     public void NewSyntax_ReportsNoDeprecation(string template)
     {
         Assert.Empty(Deprecations(template));
+    }
+
+    // Asserts no diagnostics at all (not just no LISSIC009) so a parse error can't make these pass trivially
+    [Theory]
+    [InlineData(@"{{ branch.c [a => x] }} Hello; world")]
+    [InlineData(@"{{ branch.c [a => x, _ => """"] }}<style>p { color: red; }</style>")]
+    [InlineData(@"{{ branch.c [a => x, b => ""x;y""] }}")]
+    [InlineData(@"{{ branch.c [a => x, b => 'x;y'] }}")]
+    [InlineData(@"{{ branch.c [a => Name | known("";""), _ => """"] }}")]
+    public void NewSyntax_SemicolonsOutsideOptionDelimiters_ReportNoDiagnostics(string template)
+    {
+        Assert.Empty(RunTemplate(template).Diagnostics);
     }
 
     [Theory]

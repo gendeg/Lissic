@@ -337,6 +337,64 @@ public class ParseBranchV020Tests
         Assert.Equal(["x", "y"], Assert.Single(Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["b"])).Filters).Args);
     }
 
+
+    /* Semicolons that are not old-syntax option delimiters */
+
+    [Theory]
+    [InlineData("{{ branch.c [a => x] }} Hello; world", " Hello; world")]
+    [InlineData("{{ branch.c [a => x] }}&nbsp;", "&nbsp;")]
+    [InlineData("{{ branch.c [a => x, _ => \"\"] }}<style>p { color: red; }</style>", "<style>p { color: red; }</style>")]
+    [InlineData("{{ branch.c [a => part.x] }} a; b", " a; b")]
+    public void Parse_SemicolonAfterNewSyntaxBranch_IsTemplateText(string template, string expectedText)
+    {
+        ITemplateNode[] nodes = LissicParser.Parse(template, "TestTemplate");
+
+        Assert.Equal(2, nodes.Length);
+        BranchNode branch = Assert.IsType<BranchNode>(nodes[0]);
+        Assert.Single(branch.BranchEntries["a"]);
+        Assert.Equal(expectedText, HtmlText(nodes[1]));
+    }
+
+    [Fact]
+    public void Parse_SemicolonAfterNewSyntaxBranch_FollowedByOldSyntaxBranch()
+    {
+        ITemplateNode[] nodes = LissicParser.Parse("{{ branch.a [x => y] }} text {{ branch.b [z=>@Z;] }}", "TestTemplate");
+
+        Assert.Equal(3, nodes.Length);
+        Assert.Equal("y", Assert.IsType<VariableNode>(Assert.Single(Assert.IsType<BranchNode>(nodes[0]).BranchEntries["x"])).Name);
+        Assert.Equal(" text ", HtmlText(nodes[1]));
+        Assert.Equal("Z", SingleHtmlText(Assert.IsType<BranchNode>(nodes[2]).BranchEntries["z"]));
+    }
+
+    [Theory]
+    [InlineData("{{ branch.c [a => x, b => \"x;y\"] }}")]
+    [InlineData("{{ branch.c [a => x, b => 'x;y'] }}")]
+    [InlineData("{{ branch.c [a => part.x, b => \"x;y\"] }}")]
+    public void Parse_SemicolonInLaterQuotedLiteral_DoesNotSwitchToOldSyntax(string template)
+    {
+        BranchNode branch = ParseSingleBranch(template);
+
+        Assert.Equal(2, branch.BranchEntries.Count);
+        Assert.Single(branch.BranchEntries["a"]);
+        Assert.Equal("x;y", SingleHtmlText(branch.BranchEntries["b"]));
+    }
+
+    [Theory]
+    [InlineData("{{ branch.c [a => name | append(\";\")] }}")]
+    [InlineData("{{ branch.c [a => name | append(';')] }}")]
+    [InlineData("{{ branch.c [a => (name | append(\";\"))] }}")]
+    [InlineData("{{ branch.c [a => name | append(\";\"), _ => \"\"] }}")]
+    public void Parse_SemicolonInFilterArgument_IsPartOfTheArgument(string template)
+    {
+        BranchNode branch = ParseSingleBranch(template);
+        VariableNode variable = Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["a"]));
+
+        Assert.Equal("name", variable.Name);
+        var filter = Assert.Single(variable.Filters);
+        Assert.Equal("append", filter.Name);
+        Assert.Equal([";"], filter.Args);
+    }
+
     [Fact]
     public void Parse_ParenthesizedTagActions_ParseAsTheirNodeTypes()
     {
@@ -742,6 +800,15 @@ public class ParseFiltersV020Tests
     [InlineData("{{ name | pad(\"1\") x }}")]
     [InlineData("{{ name | pad(\"1\" \"2\") }}")]
     public void Parse_MalformedPipeFilters_Throw(string template)
+    {
+        Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
+    }
+
+    [Theory]
+    [InlineData("{{ part.header | upper }}")]
+    [InlineData("{{ loop.items | upper }}")]
+    [InlineData("{{ (part.header | upper) }}")]
+    public void Parse_FiltersOnNonVariableTags_Throw(string template)
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
     }

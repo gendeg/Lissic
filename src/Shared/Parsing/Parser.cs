@@ -15,7 +15,12 @@ internal static class LissicParser
         return true;
     }
 
-    internal static ITemplateNode[] Parse(ReadOnlySpan<char> partText, ReadOnlySpan<char> templateName, bool isSourceGen = false, int parseIdx = 0)
+    internal static ITemplateNode[] Parse(
+        ReadOnlySpan<char> partText, 
+        ReadOnlySpan<char> templateName, 
+        bool isSourceGen = false, 
+        List<(string, string)>? deprecationLog = null, 
+        int parseIdx = 0)
     {
         List<ITemplateNode> nodes = [];
         int pos = 0;
@@ -55,7 +60,7 @@ internal static class LissicParser
                 || partText[pos..].TrimStart().StartsWith("switch.", StringComparison.OrdinalIgnoreCase))
             {
                 // Parse branch tag
-                (BranchNode branchNode, int consumed) = ParseBranch(partText[pos..], templateName, isSourceGen, parseIdx + pos, enclosedInParens);
+                (BranchNode branchNode, int consumed) = ParseBranch(partText[pos..], templateName, isSourceGen, deprecationLog, parseIdx + pos, enclosedInParens);
                 nodes.Add(branchNode);
                 pos += consumed;
             }
@@ -73,7 +78,7 @@ internal static class LissicParser
                     throw new TemplateParsingException($"Expected ')' in template: {templateName.ToString()}, near position: {parseIdx + pos}.");
 
                 ReadOnlySpan<char> tag = partText[pos..(pos + length)];
-                nodes.Add(ParseTag(tag, templateName, parseIdx + pos));
+                nodes.Add(ParseTag(tag, templateName, parseIdx + pos, deprecationLog));
 
                 pos += endTag + 2; // Skip past the closing }}
             }
@@ -82,7 +87,13 @@ internal static class LissicParser
         return [..nodes];
     }
 
-    internal static (BranchNode, int) ParseBranch(ReadOnlySpan<char> branch, ReadOnlySpan<char> templateName, bool isSourceGen, int parseIdx, bool enclosedInParens)
+    internal static (BranchNode, int) ParseBranch(
+        ReadOnlySpan<char> branch, 
+        ReadOnlySpan<char> templateName, 
+        bool isSourceGen, 
+        List<(string, string)>? deprecationLog, 
+        int parseIdx, 
+        bool enclosedInParens)
     {
         BranchParseState s = new()
         {
@@ -125,7 +136,10 @@ internal static class LissicParser
 
         // Build the branch options dictionary
         s.branchOptions = new(2);
-        while (ParseBranchOption(branch, ref s, templateName, isSourceGen, parseIdx)) {}
+        while (ParseBranchOption(branch, ref s, templateName, isSourceGen, deprecationLog, parseIdx)) {}
+
+        if (s.oldSyntax == true)
+            deprecationLog?.Add(("Use of ; as branch option delimiter", templateName.ToString()));
 
         return (new BranchNode(s.keyName, s.branchOptions, required, !(s.oldSyntax ?? false) && s.branchOptions.ContainsKey("_")), s.pos);
     }
@@ -225,7 +239,13 @@ internal static class LissicParser
         return literalText.ToString();
     }
 
-    internal static bool ParseBranchOption(ReadOnlySpan<char> options, ref BranchParseState s, ReadOnlySpan<char> templateName, bool isSourceGen, int parseIdx)
+    internal static bool ParseBranchOption(
+        ReadOnlySpan<char> options, 
+        ref BranchParseState s, 
+        ReadOnlySpan<char> templateName, 
+        bool isSourceGen, 
+        List<(string, string)>? deprecationLog, 
+        int parseIdx)
     {
         int fatArrow = options[s.pos..].IndexOf("=>");
         int comma = options[s.pos..].IndexOf(',');
@@ -267,7 +287,7 @@ internal static class LissicParser
             s.pos++;
             int literalStartPos = parseIdx + s.pos;
             string literalText = ParseBranchLiteral(options, ref s, options[s.pos - 1], templateName, parseIdx);
-            s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, literalStartPos);
+            s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, deprecationLog, literalStartPos);
 
             while (char.IsWhiteSpace(options[s.pos])) s.pos++;
             if (options[s.pos] == ',')
@@ -284,7 +304,8 @@ internal static class LissicParser
             s.pos++;
             int literalStartPos = parseIdx + s.pos;
             string literalText = ParseBranchLiteralOld(options, ref s, templateName, parseIdx);
-            s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, literalStartPos);
+            s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, deprecationLog, literalStartPos);
+            deprecationLog?.Add(("Use of @ for branch string literal", templateName.ToString()));
         }
 
         // Command branch value
@@ -305,7 +326,7 @@ internal static class LissicParser
                 if (endIdx == -1 || (s.pos + endIdx) > s.endTagIdx)
                     throw new TemplateParsingException($"Option for branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}, is not closed properly.  Is there a closing ';'?");
 
-                s.branchOptions[keyValue] = [ParseTag(options[s.pos..(s.pos + endIdx)], templateName, parseIdx + s.pos)];
+                s.branchOptions[keyValue] = [ParseTag(options[s.pos..(s.pos + endIdx)], templateName, parseIdx + s.pos, deprecationLog)];
                 s.pos += endIdx + 1;
             }
 
@@ -326,7 +347,7 @@ internal static class LissicParser
                 if (endIdx > s.endCmdIdx)
                     throw new TemplateParsingException($"Option for branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}, is not closed properly.");
 
-                s.branchOptions[keyValue] = [ParseTag(options[s.pos..endIdx], templateName, parseIdx + s.pos)];
+                s.branchOptions[keyValue] = [ParseTag(options[s.pos..endIdx], templateName, parseIdx + s.pos, deprecationLog)];
                 s.pos = options[endIdx] == ']' ? endIdx : endIdx + 1;
             }
         }
@@ -379,7 +400,7 @@ internal static class LissicParser
         return [.. filters];
     }
 
-    internal static FilterCall[] ParseFiltersOld(ReadOnlySpan<char> text, ReadOnlySpan<char> variableName, ReadOnlySpan<char> templateName, int parseIdx)
+    internal static FilterCall[] ParseFiltersOld(ReadOnlySpan<char> text, ReadOnlySpan<char> variableName, ReadOnlySpan<char> templateName, int parseIdx, List<(string, string)>? deprecationLog)
     {
         TemplateParsingException Error(string problem, int at, string propName, string tmplName)
             => new($"Filter for variable '{propName}', in template: {tmplName}, near position: {parseIdx + at}, {problem}");
@@ -408,7 +429,7 @@ internal static class LissicParser
             if (text[pos] == '(')
             {
                 pos++;
-                args = ParseFilterArgsOld(text, ref pos, Error, variableName, templateName);
+                args = ParseFilterArgsOld(text, ref pos, Error, variableName, templateName, deprecationLog);
             }
             filters.Add(new FilterCall(name, args));
 
@@ -499,7 +520,7 @@ internal static class LissicParser
         }
     }
 
-    private static string[] ParseFilterArgsOld(ReadOnlySpan<char> text, ref int pos, Func<string, int, string, string, TemplateParsingException> error, ReadOnlySpan<char> variableName, ReadOnlySpan<char> templateName)
+    private static string[] ParseFilterArgsOld(ReadOnlySpan<char> text, ref int pos, Func<string, int, string, string, TemplateParsingException> error, ReadOnlySpan<char> variableName, ReadOnlySpan<char> templateName, List<(string, string)>? deprecationLog)
     {
         List<string> args = [];
 
@@ -536,6 +557,8 @@ internal static class LissicParser
                 arg = text[start..pos].Trim().ToString();
                 if (arg.Length == 0)
                     throw error("has an empty argument.", start, variableName.ToString(), templateName.ToString());
+                if (!long.TryParse(arg, out _) && !decimal.TryParse(arg, out _))
+                    deprecationLog?.Add(("Unquoted string used in filter arguement", templateName.ToString()));
             }
             args.Add(arg);
 
@@ -552,10 +575,10 @@ internal static class LissicParser
         }
     }
 
-    internal static ITemplateNode ParseTag(ReadOnlySpan<char> tag, ReadOnlySpan<char> templateName, int parseIdx)
+    internal static ITemplateNode ParseTag(ReadOnlySpan<char> tag, ReadOnlySpan<char> templateName, int parseIdx, List<(string, string)>? deprecationLog)
     {
         if (tag[0] == '(' && tag[^1] == ')')
-            return ParseTag(tag[1..^1], templateName, parseIdx);
+            return ParseTag(tag[1..^1], templateName, parseIdx, deprecationLog);
         if (tag[0] == '(')
             throw new TemplateParsingException($"Unmatched parentheses in tag: '{tag.ToString()}', in template: {templateName.ToString()}, near position: {parseIdx}");
 
@@ -567,7 +590,7 @@ internal static class LissicParser
         if (period == -1 || (period > pipe && pipe != -1) || (period > lessThan && lessThan != -1))
         {
             if (lessThan != -1 && (pipe == -1 || lessThan < pipe) && (period == -1 || lessThan < period))
-                return ParseVariableTagOld(tag, templateName, parseIdx, lessThan);
+                return ParseVariableTagOld(tag, templateName, parseIdx, lessThan, deprecationLog);
             
             return ParseVariableTag(tag, templateName, parseIdx, pipe);
         }
@@ -586,6 +609,9 @@ internal static class LissicParser
         }
         if (tagValue.IsEmpty)
             throw new TemplateParsingException($"Tag value is missing for tag command: '{tagCommand}', in template: {templateName.ToString()}, near position: {parseIdx}.");
+        
+        if (pipe != -1 || lessThan != -1)
+            throw new TemplateParsingException($"Filters not allowed for tags of type {tagCommand}; in template: {templateName.ToString()}, near position: {parseIdx}");
 
         return tagCommand switch
         {
@@ -623,7 +649,7 @@ internal static class LissicParser
         return new VariableNode(variableName.ToString(), required, filters);
     }
 
-    internal static VariableNode ParseVariableTagOld(ReadOnlySpan<char> tag, ReadOnlySpan<char> templateName, int parseIdx, int lessThan)
+    internal static VariableNode ParseVariableTagOld(ReadOnlySpan<char> tag, ReadOnlySpan<char> templateName, int parseIdx, int lessThan, List<(string, string)>? deprecationLog)
     {
         FilterCall[]? filters = null;
         bool required = true;
@@ -634,7 +660,8 @@ internal static class LissicParser
         else
         {
             variableName = tag[..lessThan].Trim();
-            filters = ParseFiltersOld(tag[(lessThan + 1)..], variableName, templateName, parseIdx + lessThan + 1);
+            filters = ParseFiltersOld(tag[(lessThan + 1)..], variableName, templateName, parseIdx + lessThan + 1, deprecationLog);
+            deprecationLog?.Add(("Old filter syntax", templateName.ToString()));
         }
 
         if (!variableName.IsEmpty && variableName[^1] == '?')
