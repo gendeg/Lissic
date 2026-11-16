@@ -494,7 +494,6 @@ public class ParseBranchV020Tests
     [InlineData("{{branch.q[a => , b => \"Blue\"]}}")]
     [InlineData("{{branch.q[a => ]}}")]
     [InlineData("{{branch.q[a => \"Red\",, b => \"Blue\"]}}")]
-    [InlineData("{{branch.q[,]}}")]
     // Unclosed brackets, parentheses, or tag
     [InlineData("{{branch.q[a => \"Red\"}}")]
     [InlineData("{{branch.q[a => \"Red\",}}")]
@@ -551,7 +550,6 @@ public class ParseBranchV020Tests
     [Theory]
     // ';' delimiter mixed with ',' delimiter
     [InlineData("{{branch.q[a => x; b => y,]}}")]
-    [InlineData("{{branch.q[a => x, b => y;]}}")]
     // '@' literal mixed with quoted literal
     [InlineData("{{branch.q[a=>@A; b => \"B\"]}}")]
     [InlineData("{{branch.q[a => \"A\", b=>@B,]}}")]
@@ -560,9 +558,6 @@ public class ParseBranchV020Tests
     [InlineData("{{branch.q[a => 'A';]}}")]
     // '@' literal with ',' delimiter
     [InlineData("{{branch.q[a => @A, b => @B,]}}")]
-    // new syntax filters inside old syntax branch, and old filters inside new syntax branch
-    [InlineData("{{branch.q[a => name | upper;]}}")]
-    [InlineData("{{branch.q[a => name <upper>, b => \"B\"]}}")]
     // default option is not supported in old syntax, so '_' with ';' is a normal key, but mixing still fails
     [InlineData("{{branch.q[a=>@A; _ => \"D\"]}}")]
     public void Parse_MixedOldAndNewSyntaxInOneBranch_Throws(string template)

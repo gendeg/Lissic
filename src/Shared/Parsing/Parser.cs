@@ -90,8 +90,7 @@ internal static class LissicParser
             enclosedInParens = enclosedInParens,
             // NOTE: endCmdIdx is the end index relative to the original span
             // This allows pos, and pos offsets, to be directly compared to endCmdIdx without needing to adjust both as we go
-            endTagIdx = branch.IndexOf("}}"),
-            hasDefault = false
+            endTagIdx = branch.IndexOf("}}")
         };
         s.endCmdIdx = s.endTagIdx;
         if (s.endTagIdx == -1)
@@ -229,6 +228,9 @@ internal static class LissicParser
     internal static bool ParseBranchOption(ReadOnlySpan<char> options, ref BranchParseState s, ReadOnlySpan<char> templateName, bool isSourceGen, int parseIdx)
     {
         int fatArrow = options[s.pos..].IndexOf("=>");
+        int comma = options[s.pos..].IndexOf(',');
+        if (comma != -1 && comma < fatArrow)
+            throw new TemplateParsingException($"Unexpected ',' before '=>' in branch option for branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}.");
 
         // No more options in this branch
         if (fatArrow == -1 || (s.pos + fatArrow) > s.endCmdIdx)
@@ -247,9 +249,13 @@ internal static class LissicParser
         string keyValue = options[s.pos..(s.pos + fatArrow)].Trim().ToString();
         if (keyValue == "")
             throw new TemplateParsingException($"Branch option key is missing in template: {templateName.ToString()}, near position: {parseIdx + s.pos}.");
+        if (s.branchOptions.ContainsKey(keyValue))
+            throw new TemplateParsingException($"Duplicate branch key '{keyValue}', for branch: '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}.");
 
         s.pos += fatArrow + 2;
         while (char.IsWhiteSpace(options[s.pos])) s.pos++;
+        if (options[s.pos] == ',' || options[s.pos] == ']')
+            throw new TemplateParsingException($"Missing value for branch option '{keyValue}', for branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}");
 
         // Literal text branch value
         if (options[s.pos] == '"' || options[s.pos] == '\'')
@@ -264,7 +270,10 @@ internal static class LissicParser
             s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, literalStartPos);
 
             while (char.IsWhiteSpace(options[s.pos])) s.pos++;
-            if (options[s.pos] == ',') s.pos++;
+            if (options[s.pos] == ',')
+                s.pos++;
+            else if (options[s.pos] != ']')
+                throw new TemplateParsingException($"Expected ',' or ']' at end of branch option in branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}.");
         }
         else if (options[s.pos] == '@')
         {
@@ -547,6 +556,8 @@ internal static class LissicParser
     {
         if (tag[0] == '(' && tag[^1] == ')')
             return ParseTag(tag[1..^1], templateName, parseIdx);
+        if (tag[0] == '(')
+            throw new TemplateParsingException($"Unmatched parentheses in tag: '{tag.ToString()}', in template: {templateName.ToString()}, near position: {parseIdx}");
 
         int period = tag.IndexOf('.');
         int lessThan = tag.IndexOf('<');
@@ -643,7 +654,6 @@ internal static class LissicParser
         public bool enclosedInParens;
         public int endCmdIdx;
         public int endTagIdx;
-        public bool hasDefault;
         public string keyName;
         public bool? oldSyntax;
         public int pos;
