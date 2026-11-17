@@ -7,7 +7,7 @@ internal static class LissicParser
 {
     internal static bool FindEndParen(ReadOnlySpan<char> text, ref int idx)
     {
-        while (char.IsWhiteSpace(text[--idx])) {}
+        while (idx > 0 && char.IsWhiteSpace(text[--idx])) {}
 
         if (text[idx] != ')')
             return false;
@@ -467,6 +467,10 @@ internal static class LissicParser
             if (pos < text.Length && text[pos] == '(')
             {
                 pos++;
+                int pipe = text[pos..].IndexOf('|');
+                if (pipe == -1 && text[pos..].TrimEnd()[^1] != ')')
+                    throw Error("is missing a closing ')'.", nameStart, variableName.ToString(), templateName.ToString());
+
                 args = ParseFilterArgs(text, ref pos, Error, variableName, templateName);
             }
             filters.Add(new FilterCall(name, args));
