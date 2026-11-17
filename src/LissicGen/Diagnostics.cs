@@ -52,4 +52,10 @@ internal static class Diagnostics
         "Empty template file",
         "Template file '{0}' is empty",
         "Usage", DiagnosticSeverity.Info, isEnabledByDefault: true);
+    
+    public static readonly DiagnosticDescriptor DeprecatedSyntax = new(
+        "LISSIC009",
+        "Deprecated syntax",
+        "Syntax '{0}' in template '{1}' is deprecated",
+        "Design", DiagnosticSeverity.Warning, isEnabledByDefault: true);
 }

@@ -68,10 +68,10 @@ Also, think about these:
 {{loop.itemsForLoop}}
 
 Well, I have more things to test, so...
-{{ testVal <upper> }}
-{{ testVal2 <lower(""lowerArg"") | pad(""42"", ""down"")> }}
+{{ testVal | upper }}
+{{ testVal2 | lower(""lowerArg"") | pad(""42"", ""down"") }}
 
-As always, {{ branch.farewellType[like=>@take care!;dislike=>@goodbye!;]}} ")]
+As always, {{ branch.farewellType[like => ""take care!"", dislike => ""goodbye!""]}} ")]
     public partial class WelcomeMessage { }
     }
 }
@@ -425,7 +425,7 @@ public partial class WelcomeMessage { }
     {
         string[] ids = DiagnosticIds($$$"""
 {{{TemplateHeader}}}
-[TemplateText(@"{{ Name <KNOWN(""x"") | Known> }}")]
+[TemplateText(@"{{ Name | KNOWN(""x"") | Known }}")]
 public partial class WelcomeMessage { }
 """);
 

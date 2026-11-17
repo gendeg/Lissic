@@ -7,11 +7,17 @@ namespace Lissic.Parsing;
 internal interface ITemplateNode {}
 
 
-internal readonly struct BranchNode(string branchName, Dictionary<string, ITemplateNode[]> branchEntries, bool required) : ITemplateNode
+internal readonly struct BranchNode(string branchName, Dictionary<string, ITemplateNode[]> branchEntries, bool required, bool hasDefault) : ITemplateNode
 {
     public ReadOnlySpan<char> BranchName => branchName;
     public IReadOnlyDictionary<string, ITemplateNode[]> BranchEntries => branchEntries;
-    public bool Required => required;
+
+    // flags: bit 0 = required, bit 1 = hasDefault
+    private readonly byte flags = required ?
+        hasDefault ? (byte)(2 + 1) : (byte)(0 + 1) :
+        hasDefault ? (byte)(2 + 0) : (byte)(0 + 0);
+    public bool HasDefault => (flags & 2) != 0;
+    public bool Required => (flags & 1) != 0;
 }
 
 

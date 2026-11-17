@@ -361,10 +361,13 @@ public class LissicTemplateGenerator : IIncrementalGenerator
     static bool TryParseTemplate(SourceProductionContext context, TemplateRecord record, ImmutableHashSet<string> filterNames, out ITemplateNode[] nodes)
     {
         Location? location = record.TargetClass.Locations.FirstOrDefault();
+        List<(string, string)> deprecationLog = [];
 
         try
         {
-            nodes = LissicParser.Parse(record.Content, record.TemplateRefName, isSourceGen: true);
+            nodes = LissicParser.Parse(record.Content, record.TemplateRefName, isSourceGen: true, deprecationLog);
+            foreach ((string message, string template) item in deprecationLog)
+                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.DeprecatedSyntax, location, [item.message, item.template]));
         }
         catch (TemplateParsingException ex)
         {

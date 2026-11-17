@@ -19,10 +19,10 @@ Also, think about these:
 {{loop.itemsForLoop}}
 
 Well, I have more things to test, so...
-{{ testVal <upper> }}
-{{ testVal2 <lower(""lowerArg"") | pad(""42"", ""down"")> }}
+{{ testVal | upper }}
+{{ testVal2 | lower(""lowerArg"") | pad(""42"", ""down"") }}
 
-As always, {{ branch.farewellType[like=>@take care!;dislike=>@goodbye!;]}} ", "WelcomeMessage"),
+As always, {{ branch.farewellType[like => ""take care!"", dislike => ""goodbye!""]}} ", "WelcomeMessage"),
             _ => throw new ArgumentOutOfRangeException(nameof(index))
         };
 

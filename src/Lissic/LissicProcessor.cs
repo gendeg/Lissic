@@ -65,13 +65,20 @@ public class LissicProcessor(TemplateCache partCache): ILissicProcessor, IDispos
 
         if (string.IsNullOrEmpty(key))
         {
-            UnknownTagDebug.Handle(writer,
-                $"Branch key for '{branchNode.BranchName}' is empty.  No branch key was provided or the value is empty.");
+            if (branchNode.HasDefault)
+            {
+                key = "_";
+            }
+            else
+            {
+                UnknownTagDebug.Handle(writer,
+                    $"Branch key for '{branchNode.BranchName}' is empty.  No branch key was provided or the value is empty.");
+                return;
+            }
         }
 
-        if (string.IsNullOrEmpty(key)) return;
-
-        if (branchNode.BranchEntries.TryGetValue(key, out ITemplateNode[]? nodes))
+        var entries = branchNode.BranchEntries;
+        if (entries.TryGetValue(key, out ITemplateNode[]? nodes) || (branchNode.HasDefault && entries.TryGetValue("_", out nodes)))
         {
             foreach (ITemplateNode node in nodes)
             {
