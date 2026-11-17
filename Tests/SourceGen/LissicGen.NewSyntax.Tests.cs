@@ -209,6 +209,44 @@ public partial class WelcomeMessage { }
         Assert.DoesNotContain(result.GeneratedSources, source => source.HintName == "Lissic.WelcomeMessage.g.cs");
     }
 
+    // Inputs that once threw non-parsing exceptions inside the parser.  These must report LISSIC005
+    // rather than crash the generator (a crash surfaces as result.Exception / CS8785).
+    [Theory]
+    [InlineData(@"text {{")]
+    [InlineData(@"text {{   ")]
+    [InlineData(@"{{(}}")]
+    [InlineData(@"{{Name|known(""a""}}")]
+    [InlineData(@"{{Name|known('a'}}")]
+    [InlineData(@"{{ branch.c [a => Name|known(""a""] }}")]
+    public void MalformedTemplate_ReportsErrorInsteadOfCrashing(string template)
+    {
+        GeneratorRunResult result = RunTemplate(template);
+
+        Assert.Null(result.Exception);
+        Diagnostic diagnostic = Assert.Single(result.Diagnostics, d => d.Id == "LISSIC005");
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        Assert.Contains("WelcomeMessage", diagnostic.GetMessage());
+    }
+
+    [Theory]
+    [InlineData(@"{{ branch.c [a => x] }}<script>f(a, b => b)</script>")]
+    [InlineData(@"{{ branch.c [a => ""x""] }} a, b => c")]
+    [InlineData(@"{{ branch.c [a => x, _ => """"] }} a, b => c")]
+    public void CommaAndFatArrowAfterBranch_ReportNoDiagnostics(string template)
+    {
+        Assert.Empty(RunTemplate(template).Diagnostics);
+    }
+
+    [Theory]
+    [InlineData(@"{{ Name | known(""}}"") }}")]
+    [InlineData(@"{{ Name | known('}}') }}")]
+    [InlineData(@"{{ (Name | known(""a }} b"")) }}")]
+    [InlineData(@"{{ branch.c [a => Name | known(""}}""), _ => """"] }}")]
+    public void ClosingTagInsideQuotedArg_ReportsNoDiagnostics(string template)
+    {
+        Assert.Empty(RunTemplate(template).Diagnostics);
+    }
+
 
     /* Deprecated syntax: LISSIC009 */
 

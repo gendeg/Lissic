@@ -535,6 +535,48 @@ public class ParseBranchV020Tests
         Assert.Equal("Y", SingleHtmlText(Assert.IsType<BranchNode>(nodes[1]).BranchEntries["y"]));
     }
 
+    // ',' and '=>' after the closing '}}' are template text, not part of the branch
+    [Theory]
+    [InlineData("{{ branch.c [a => x] }}<script>f(a, b => b)</script>", "<script>f(a, b => b)</script>")]
+    [InlineData("{{ branch.c [a => \"x\"] }} a, b => c", " a, b => c")]
+    [InlineData("{{ branch.c [a => x, _ => \"\"] }} a, b => c", " a, b => c")]
+    [InlineData("{{ branch.c [a => part.p] }} a, b => c", " a, b => c")]
+    [InlineData("{{ (branch.c [a => x]) }} a, b => c", " a, b => c")]
+    [InlineData("{{ branch.c [a => x] }}\n<script>\n  list.map((a, i) => a + i);\n</script>", "\n<script>\n  list.map((a, i) => a + i);\n</script>")]
+    [InlineData("{{ branch.c [a => x] }} a, b, c => d, e => f", " a, b, c => d, e => f")]
+    [InlineData("{{ branch.c [a => x] }} ,=>", " ,=>")]
+    public void Parse_CommaAndFatArrowAfterBranch_AreTemplateText(string template, string expectedText)
+    {
+        ITemplateNode[] nodes = LissicParser.Parse(template, "TestTemplate");
+
+        Assert.Equal(2, nodes.Length);
+        BranchNode branch = Assert.IsType<BranchNode>(nodes[0]);
+        Assert.Single(branch.BranchEntries["a"]);
+        Assert.Equal(expectedText, HtmlText(nodes[1]));
+    }
+
+    [Fact]
+    public void Parse_CommaAndFatArrowAfterBranch_FollowedByAnotherTag()
+    {
+        ITemplateNode[] nodes = LissicParser.Parse("{{ branch.c [a => x] }} a, b => c {{ name }}", "TestTemplate");
+
+        Assert.Equal(3, nodes.Length);
+        Assert.IsType<BranchNode>(nodes[0]);
+        Assert.Equal(" a, b => c ", HtmlText(nodes[1]));
+        Assert.Equal("name", Assert.IsType<VariableNode>(nodes[2]).Name);
+    }
+
+    [Fact]
+    public void Parse_CommaAndFatArrowAfterBranch_InsideQuotedLiteral()
+    {
+        BranchNode outer = ParseSingleBranch("{{ branch.c [a => \"{{ branch.d [b => x] }} p, q => r\"] }}");
+
+        ITemplateNode[] inner = outer.BranchEntries["a"];
+        Assert.Equal(2, inner.Length);
+        Assert.IsType<BranchNode>(inner[0]);
+        Assert.Equal(" p, q => r", HtmlText(inner[1]));
+    }
+
 
     /* Errors */
 
@@ -775,6 +817,88 @@ public class ParseFiltersV020Tests
         Assert.Equal(["a,b", "c|d", ")", "(", "<>", "]"], Assert.Single(variable.Filters).Args);
     }
 
+    // '}}' inside a quoted argument does not close the tag
+    [Theory]
+    [InlineData("{{ name | f(\"}}\") }}", new[] { "}}" })]
+    [InlineData("{{ name | f('}}') }}", new[] { "}}" })]
+    [InlineData("{{name|f(\"}}\")}}", new[] { "}}" })]
+    [InlineData("{{ name | f(\"a }} b\") }}", new[] { "a }} b" })]
+    [InlineData("{{ name | f(\"{{\", \"}}\") }}", new[] { "{{", "}}" })]
+    [InlineData("{{ name | f(\"}}}}\") }}", new[] { "}}}}" })]
+    [InlineData("{{ name | f(\"}\") }}", new[] { "}" })]
+    [InlineData("{{ name | f(\"x\"\"}}\") }}", new[] { "x\"}}" })]
+    [InlineData("{{ name | f(\"}}\"\"\") }}", new[] { "}}\"" })]
+    [InlineData("{{ name | f(1, \"}}\") }}", new[] { "1", "}}" })]
+    [InlineData("{{ (name | f(\"}}\")) }}", new[] { "}}" })]
+    [InlineData("{{ name? | f(\"}}\") }}", new[] { "}}" })]
+    public void Parse_ClosingTagInsideQuotedArg_IsPartOfTheArgument(string template, string[] expected)
+    {
+        VariableNode variable = ParseSingleVariable(template);
+
+        Assert.Equal("name", variable.Name);
+        Assert.Equal(expected, Assert.Single(variable.Filters).Args);
+    }
+
+    [Fact]
+    public void Parse_ClosingTagInsideQuotedArg_InFilterChain()
+    {
+        VariableNode variable = ParseSingleVariable("{{ name | f(\"}}\") | g('}}') | upper }}");
+
+        Assert.Collection(variable.Filters,
+            f => { Assert.Equal("f", f.Name); Assert.Equal(["}}"], f.Args); },
+            f => { Assert.Equal("g", f.Name); Assert.Equal(["}}"], f.Args); },
+            f => { Assert.Equal("upper", f.Name); Assert.Empty(f.Args); });
+    }
+
+    [Fact]
+    public void Parse_ClosingTagInsideQuotedArg_SurroundingTextAndTags()
+    {
+        ITemplateNode[] nodes = LissicParser.Parse("a {{ name | f(\"}}\") }} b {{ other }} c", "TestTemplate");
+
+        Assert.Equal(5, nodes.Length);
+        Assert.Equal("a ", Encoding.UTF8.GetString(Assert.IsType<HtmlNode>(nodes[0]).Html.Span));
+        Assert.Equal(["}}"], Assert.Single(Assert.IsType<VariableNode>(nodes[1]).Filters).Args);
+        Assert.Equal(" b ", Encoding.UTF8.GetString(Assert.IsType<HtmlNode>(nodes[2]).Html.Span));
+        Assert.Equal("other", Assert.IsType<VariableNode>(nodes[3]).Name);
+        Assert.Equal(" c", Encoding.UTF8.GetString(Assert.IsType<HtmlNode>(nodes[4]).Html.Span));
+    }
+
+    [Theory]
+    [InlineData("{{ branch.c [a => name | f(\"}}\")] }}")]
+    [InlineData("{{ branch.c [a => name | f('}}')] }}")]
+    [InlineData("{{ branch.c [a => name | f(\"}}\"), b => y] }}")]
+    [InlineData("{{ branch.c [a => (name | f(\"}}\")), b => y] }}")]
+    [InlineData("{{ branch.c [b => y, a => name | f(\"}}\")] }}")]
+    [InlineData("{{ (branch.c [a => name | f(\"}}\")]) }}")]
+    public void Parse_ClosingTagInsideQuotedArg_InBranchOption(string template)
+    {
+        BranchNode branch = Assert.IsType<BranchNode>(Assert.Single(LissicParser.Parse(template, "TestTemplate")));
+        VariableNode variable = Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["a"]));
+
+        Assert.Equal("name", variable.Name);
+        Assert.Equal(["}}"], Assert.Single(variable.Filters).Args);
+    }
+
+    [Fact]
+    public void Parse_ClosingTagInsideQuotedArg_InBranchOption_FollowedByText()
+    {
+        ITemplateNode[] nodes = LissicParser.Parse("{{ branch.c [a => name | f(\"}}\")] }} after", "TestTemplate");
+
+        Assert.Equal(2, nodes.Length);
+        Assert.IsType<BranchNode>(nodes[0]);
+        Assert.Equal(" after", Encoding.UTF8.GetString(Assert.IsType<HtmlNode>(nodes[1]).Html.Span));
+    }
+
+    [Fact]
+    public void Parse_ClosingTagInsideQuotedArg_InsideQuotedBranchLiteral()
+    {
+        BranchNode branch = Assert.IsType<BranchNode>(Assert.Single(LissicParser.Parse("{{ branch.c [a => \"<b>{{ name | f('}}') }}</b>\"] }}", "TestTemplate")));
+
+        ITemplateNode[] entry = branch.BranchEntries["a"];
+        Assert.Equal(3, entry.Length);
+        Assert.Equal(["}}"], Assert.Single(Assert.IsType<VariableNode>(entry[1]).Filters).Args);
+    }
+
 
     /* Mixing and malformed filters */
 
@@ -937,4 +1061,76 @@ public class ParseParenthesesV020Tests
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
     }
+}
+
+
+// Malformed or truncated tags must throw TemplateParsingException, never another exception type.
+// The source generator only converts TemplateParsingException into LISSIC005, so any other
+// exception crashes the generator.
+public class ParseMalformedTagsV020Tests
+{
+    private static void AssertParseError(string template)
+    {
+        Exception? ex = Record.Exception(() => LissicParser.Parse(template, "TestTemplate"));
+        Assert.NotNull(ex);
+        Assert.IsType<TemplateParsingException>(ex);
+    }
+
+    [Theory]
+    [InlineData("{{")]
+    [InlineData("{{ ")]
+    [InlineData("{{   ")]
+    [InlineData("{{\n")]
+    [InlineData("text {{")]
+    [InlineData("text {{   ")]
+    [InlineData("{{ name }} text {{")]
+    [InlineData("{{ name }} text {{ ")]
+    public void Parse_TemplateEndingInOpenTag_Throws(string template)
+        => AssertParseError(template);
+
+    [Theory]
+    [InlineData("{{(")]
+    [InlineData("{{ (")]
+    [InlineData("{{ ( ")]
+    [InlineData("text {{ (")]
+    public void Parse_TemplateEndingInOpenParenthesis_Throws(string template)
+        => AssertParseError(template);
+
+    [Theory]
+    [InlineData("{{(}}")]
+    [InlineData("{{ (}}")]
+    [InlineData("{{ ( }}")]
+    [InlineData("{{ ((}}")]
+    [InlineData("{{ )}}")]
+    [InlineData("{{ ) }}")]
+    public void Parse_UnbalancedParentheses_Throws(string template)
+        => AssertParseError(template);
+
+    [Theory]
+    [InlineData("{{name|f(\"a\"}}")]
+    [InlineData("{{name|f('a'}}")]
+    [InlineData("{{name|f(\"\"}}")]
+    [InlineData("{{name|f(\"a\"\"\"}}")]
+    [InlineData("{{name|f(1, \"a\"}}")]
+    [InlineData("{{name|f(\"a\"")]
+    [InlineData("{{name|f(\"")]
+    [InlineData("{{name|f(")]
+    [InlineData("{{name|")]
+    [InlineData("{{ (name|f(\"a\")}}")]
+    public void Parse_FilterArgsCutOffAtEndOfTag_Throws(string template)
+        => AssertParseError(template);
+
+    [Theory]
+    [InlineData("{{ branch.c [a => name|f(\"a\"] }}")]
+    [InlineData("{{ branch.c [a => name|f(\"a\"]}}")]
+    [InlineData("{{ branch.c [a =>")]
+    [InlineData("{{ branch.c [a => ")]
+    [InlineData("{{ branch.c [a => x")]
+    [InlineData("{{ branch.c [a => \"x\"")]
+    [InlineData("{{ branch.c [")]
+    [InlineData("{{ branch.c")]
+    [InlineData("{{ branch.")]
+    [InlineData("{{ (branch.c [a => x]")]
+    public void Parse_BranchCutOff_Throws(string template)
+        => AssertParseError(template);
 }
