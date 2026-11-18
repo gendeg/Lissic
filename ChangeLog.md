@@ -1,3 +1,18 @@
+#### Version 0.2.0 (2026-Nov-__)
+
+- BREAKING: Multiple changes to Lissic syntax, old syntax is deprecated and will be removed in 0.3.0
+  - Branches now use `,` delimiter (instead of `;`)
+  - Branches can now use `_` to add default options (will use prior behavior (i.e. silent skip in Release builds and follow options in Debug builds) when no default is present)
+  - Duplicate branch keys are not allowed
+  - Use `"` or `'` to identify branch literal strings (rather than `@` and `;`); `""` or `''` are the new escape sequences, respectively
+  - Filters drop the no-space-before-parentheses rule
+  - String arguments require quotes (`"` or `'`) with `""` or `''` as escape sequences, respectively
+  - Filters are no longer enclosed in `<>`, just use `|` before the first filter
+  - Tags can be surrounded by optional parentheses, including inside branch options
+- Documentation reflects new syntax
+- Added `LISSIC009` diagnostic to note old syntax usage
+
+
 #### Version 0.1.5 (2026-Nov-04)
 
 - Change `LISSIC008` (Empty Template File) severity from Warning to Info

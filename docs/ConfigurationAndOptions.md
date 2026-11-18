@@ -27,7 +27,7 @@ The following options exist in the `LissicOptions` class:
 **Default:** false
 
 **Setting:** `UnknownBranchKeyDebugMode`
-**Behavior:** Sets the behavior for handling unknown branch keys.  This option will only take effect if built in Debug mode and has no effect in Release builds.  In Release builds, unknown keys will always be skipped silently.
+**Behavior:** Sets the behavior for handling unknown branch keys when no default option is given.  This option will only take effect if built in Debug mode and has no effect in Release builds.  In Release builds, unknown keys will always be skipped silently.
 **Default:** `UnknownBranchKeyDebugMode.Skip` (enum)
 
 **Setting:** `UnknownTagDebugMode`

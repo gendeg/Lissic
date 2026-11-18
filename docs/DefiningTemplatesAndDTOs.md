@@ -234,15 +234,15 @@ Wait... those cities don't exist...
 
 Branch values store a `string` key that will determine which path the branch takes.  If the key matches one of the keys in the template, that branch will be taken.
 
-If the key isn't found in a release build, the branch will be silently skipped.  If the key isn't found in a debug build, the action specified by the `UnknownBranchKeyDebugMode` option will be taken (default is silently skip).
+If the key isn't found in a release build, and there is no default branch specified (see [Tag Templates documentation](https://github.com/gendeg/Lissic/blob/main/docs/TemplateTags.md)), the branch will be silently skipped.  If the key isn't found in a debug build, and there is no default, the action specified by the `UnknownBranchKeyDebugMode` option will be taken (default is silently skip).
 
-NOTE: A null or empty branch key behaves according to `UnknownTagDebugMode`.  `UnknownBranchKeyDebugMode` is used when the key exists, but is not found in the template's options.
+NOTE: When no default is set, a null or empty branch key behaves according to `UnknownTagDebugMode`.  `UnknownBranchKeyDebugMode` is used when the key exists but is not found in the template's options.
 
 Example:
 ```csharp
 using Lissic;
 
-[TemplateText("This morning I will {{ branch.isWeekend [true=>@sleep in!; false=>@go to work.;] }}")]
+[TemplateText("This morning I will {{ branch.isWeekend [true=>'sleep in!', false=>'go to work.'] }}")]
 public partial class MorningActivity {}
 
 MorningActivity activity = new() { isWeekend = "true" };

@@ -37,7 +37,7 @@ For instructions on using Lissic, please see [the documentation](https://github.
 Just define your templates and let Lissic prepare the rest:
 
 ```csharp
-[TemplateText("Hello {{ name <upper> }}!")]
+[TemplateText("Hello {{ name | upper }}!")]
 public partial class LissicExample {}
 
 // Automatically transforms the partial class into a DTO, with a property for each tag

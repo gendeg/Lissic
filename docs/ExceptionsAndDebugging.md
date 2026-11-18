@@ -16,7 +16,7 @@ The `TemplateCache` class has a `ReloadPathTemplates` method to reload file-base
 `ReloadPathTemplates` should only be used in development environments due to the following limitations:
 - The `TemplateCache` must be initialized before the reload can be executed (this is done automatically during startup when registered with an `IServiceCollection`).
 - Reloads are not thread safe and rendering templates while the reload is processing can lead to unpredictable results.
-- Reloads are executed synchronously (due to restrictions on debug-only methods), but the `CancellationToken` will be passed to the file IO.
+- Reloads are executed synchronously (due to restrictions on debug-only methods); however, the `CancellationToken` will be passed to the file IO.
 - The data transfer objects are defined at compile time and will not be updated for any tags that are added, removed, or modified.
 
 ---
@@ -55,6 +55,10 @@ The `TemplateCache` class has a `ReloadPathTemplates` method to reload file-base
 
 *Info* - The file identified by a `TemplatePath` attribute is empty.
 
+##### LISSIC009 - DeprecatedSyntax
+
+*Warning* - A template uses deprecated syntax.  The warning will give details on what is deprecated.
+
 ---
 
 ### Exceptions
@@ -72,8 +76,8 @@ This should only be possible inside formatters, so custom formatters should pree
 ##### TemplateRenderException
 
 `TemplateRenderException` notes a critical problem during template rendering.  This exception will only be thrown under the following circumstances:
-- `UnknownTagDebugMode` is set to `ThrowException`, and an empty tag value is encountered
-- `UnknownBranchKeyDebugMode` is set to `ThrowException`, and an empty key is encountered
+- `UnknownTagDebugMode` is set to `ThrowException`, and an empty tag value is encountered (Excpetion: )
+- `UnknownBranchKeyDebugMode` is set to `ThrowException`, and an unknown key is encountered and no default options is given
 - `EnableCycleDetection` is enabled and a cycle is detected
 - `RecursionDepthLimit` is exceeded
 - `OutputSizeThreshold` is exceeded

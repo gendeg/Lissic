@@ -32,11 +32,11 @@
 
 Filters enable modifications to variable text before they are inserted into the rendered template text.  Multiple filters can be applied to each variable.
 
-To apply a filter, the filter name should be added to the variable tag inside angle brackets `< >` (e.g. `{{ variableName <filterName> }}`).  Filter names are not case sensitive.  All of the following are equivalent: `{{ var <filter> }}`, `{{ var <Filter> }}`, and `{{ var <FiLtER> }}`.
+To apply a filter, the filter name should be added to the variable tag using `|` (e.g. `{{ variableName | filterName }}`).  Filter names are not case sensitive.  All of the following are equivalent: `{{ var | filter }}`, `{{ var | Filter }}`, and `{{ var | FiLtER }}`.
 
-Arguments can be passed to filters using parentheses `( )` (e.g. `{{ variable <filter("filterArg")> }}`).  Multiple arguments can be passed by separating arguments with a comma `,` (e.g. `{{ variable <filter("filterArg", "anotherArg")> }}`).  Arguments can be enclosed in single quotes `'`, double quotes `"`, or no quotes.  All of the following are equivalent: `{{ var <filter("arg")> }}`, `{{ var <filter('arg')> }}`, and `{{ var <filter(arg)> }}`.  There must not be any whitespace between the end of the filter name and the first parenthesis.
+Arguments can be passed to filters using parentheses `( )` (e.g. `{{ variable | filter("filterArg") }}`).  Multiple arguments can be passed by separating arguments with a comma `,` (e.g. `{{ variable | filter("filterArg", "anotherArg") }}`).  String arguments must be enclosed in single quotes `'` or double quotes `"`.  `''` and `""` can be used as escape sequences inside string arguments.  Both of the following are equivalent: `{{ var | filter("arg") }}`, `{{ var | filter('arg') }}`.  Numbers do not need quotes.
 
-Multiple filters can be applied to the same variable by separating the filters inside the angle brackets `< >` with a pipe `|` (e.g. `{{ variable <filter1 | filter2> }}`)  Filters will be applied from left to right.  In the prior example, `filter1` will be applied first, and `filter2` will be applied to the result of `filter1`.
+Multiple filters can be applied to the same variable by separating them with additional pipes `|` (e.g. `{{ variable | filter1 | filter2 }}`).  Filters will be applied from left to right.  In the prior example, `filter1` will be applied first, and `filter2` will be applied to the result of `filter1`.
 
 ---
 
@@ -45,97 +45,97 @@ Multiple filters can be applied to the same variable by separating the filters i
 **Filter Name:** ***Append***
 **Modification:** Adds text to the end of the variable
 **Arguments:** text to append
-**Use:** `{{ var <append("</p>")> }}`
+**Use:** `{{ var | append("</p>") }}`
 
 **Filter Name:** ***Capitalize***
 **Modification:** Capitalize the first letter in the variable text.  If the first letter is already capitalized, this filter does nothing.
 **Arguments:** *none*
-**Use:** `{{ var <capitalize> }}`
+**Use:** `{{ var | capitalize }}`
 
 **Filter Name:** ***HtmlTextSafe***
 **Modification:** Escapes `&` and `<` for safe HTML text (e.g. `<div>This_Text_Is_Safe</div>`)
 **Arguments:** *none*
-**Use:** `{{ var <htmlTextSafe> }}`
+**Use:** `{{ var | htmlTextSafe }}`
 
 **Filter Name:** ***HtmlAttrSafe***
 **Modification:** Escapes `&`, `<`, `>`, `"`, `'`, `/`, and `` ` `` for safety in HTML text and HTML attributes (e.g. `<div>This_Text_Is_Safe</div>` and `<div attr='Safe'>`)
 **Arguments:** *none*
-**Use:** `{{ var <htmlAttrSafe> }}`
+**Use:** `{{ var | htmlAttrSafe }}`
 
 **Filter Name:** ***Lower***
 **Modification:** Converts all letters in the text to lower case
 **Arguments:** *none*
-**Use:** `{{ var <lower> }}`
+**Use:** `{{ var | lower }}`
 
 **Filter Name:** ***Prepend***
 **Modification:** Adds text to the beginning of the variable
 **Arguments:** text to prepend
-**Use:** `{{ var <prepend("<p>")> }}`
+**Use:** `{{ var | prepend("<p>") }}`
 
 **Filter Name:** ***Remove***
 **Modification:** Removes all instances of the given text
 **Arguments:** The text to find and remove
-**Use:** `{{ var <remove("<script")> }}`
+**Use:** `{{ var | remove("<script") }}`
 
 **Filter Name:** ***RemoveFirst***
 **Modification:** Removes the first instance of the given text
 **Arguments:** The text to find and remove
-**Use:** `{{ var <removeFirst("https://")> }}`
+**Use:** `{{ var | removeFirst("https://") }}`
 
 **Filter Name:** ***RemoveLast***
 **Modification:** Removes the last instance of the given text
 **Arguments:** The text to find and remove
-**Use:** `{{ var <removeLast("https://")> }}`
+**Use:** `{{ var | removeLast("https://") }}`
 
 **Filter Name:** ***Repeat***
 **Modification:** Repeats the variable text the given number of times
 **Arguments:** The number of times to repeat the text
-**Use:** `{{ var <repeat(5)> }}`
+**Use:** `{{ var | repeat(5) }}`
 
 **Filter Name:** ***Replace***
 **Modification:** Replaces all instances of a given text with other text
 **Arguments:** The text to find and the text to replace it with
-**Use:** `{{ var <replace("badWord", "-removed-")> }}`
+**Use:** `{{ var | replace("badWord", "-removed-") }}`
 
 **Filter Name:** ***ReplaceFirst***
 **Modification:** Replaces the first instance of a given text with other text
 **Arguments:** The text to find and the text to replace it with
-**Use:** `{{ var <replaceFirst("Friendly Initiative Regarding Substantial Templates", "Long Acronym Soup Thing (FIRST)")> }}`
+**Use:** `{{ var | replaceFirst("Friendly Initiative Regarding Substantial Templates", "Friendly Initiative Regarding Substantial Templates (FIRST)") }}`
 
 **Filter Name:** ***ReplaceLast***
 **Modification:** Replaces the last instance of a given text with other text
 **Arguments:** The text to find and the text to replace it with
-**Use:** `{{ var <replaceLast("Long Acronym Soup Thing", "Long Acronym Soup Thing (LAST)")> }}`
+**Use:** `{{ var | replaceLast("Long Acronym Soup Thing", "Long Acronym Soup Thing (LAST)") }}`
 
 **Filter Name:** ***Slice***
 **Modification:** Removes all text before a given starting character index and after a given length of characters
 **Arguments:** The starting index and the number of characters to retain, in that order
-**Use:** `{{ var <slice(5, 30)> }}`
+**Use:** `{{ var | slice(5, 30) }}`
 
 **Filter Name:** ***Trim***
 **Modification:** Removes all whitespace characters from the beginning and end of the variable text
 **Arguments:** *none*
-**Use:** `{{ var <trim> }}`
+**Use:** `{{ var | trim }}`
 
 **Filter Name:** ***TrimEnd***
 **Modification:** Removes all whitespace characters from the end of the variable text
 **Arguments:** *none*
-**Use:** `{{ var <trimEnd> }}`
+**Use:** `{{ var | trimEnd }}`
 
 **Filter Name:** ***TrimStart***
 **Modification:** Removes all whitespace characters from the beginning of the variable text
 **Arguments:** *none*
-**Use:** `{{ var <trimStart> }}`
+**Use:** `{{ var | trimStart }}`
 
 **Filter Name:** ***Truncate***
 **Modification:** Removes all text after a given number of characters
 **Arguments:** maximum number of characters
-**Use:** `{{ var <truncate(20)> }}`
+**Use:** `{{ var | truncate(20) }}`
 
 **Filter Name:** ***Upper***
 **Modification:** Converts all letters in the text to upper case
 **Arguments:** *none*
-**Use:** `{{ var <upper> }}`
+**Use:** `{{ var | upper }}`
 
 ---
 
@@ -186,7 +186,7 @@ To create a custom filter, create a class that implements `IFilterFactory` and a
 - `int Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output)` - This method receives the current variable text as `input` and writes the transformed text to `output`.  It returns the number of bytes written.  This is the method that is called each time the filter is applied.
 - `static abstract ITemplateFilter Create(ReadOnlySpan<string> args)` - This method receives the arguments passed to the filter and returns an initialized instance of the filter class.  This method is run at startup, and the instance is stored for future use.
 
-The `FilterName` attribute must be applied to the class.  This attribute takes a single argument that defines the name of the filter.  For example, a filter class with the attribute `[FilterName("myFilter")]` would be accessed with `{{ variable <myFilter> }}`.  Custom filters can override a built-in filter by declaring the same name, but no two custom filters can have the same name.
+The `FilterName` attribute must be applied to the class.  This attribute takes a single argument that defines the name of the filter.  For example, a filter class with the attribute `[FilterName("myFilter")]` would be accessed with `{{ variable | myFilter }}`.  Custom filters can override a built-in filter by declaring the same name, but no two custom filters can have the same name.
 
 The example below is the append filter.  The `Create` method passes the first argument to a new instance of `AppendFilter`, which stores it as UTF-8 text, and then returns that instance to be cached for future use.  The `Apply` method writes the input to the `IBufferWriter<byte>` and then writes the stored text in order to append it to the back of the variable in the rendered template.
 

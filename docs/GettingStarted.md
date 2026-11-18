@@ -96,10 +96,10 @@ string myString = lissicProcessor.RenderToString(myTemplate);
 ##### Lissic Tag Types
 
 In the above example, `{{ name }}` is a variable tag.  There are four types of tags in Lissic.  These tags are fully explained in TemplateTags.md.
-- *Variable*: Inserts a value into the template.  Variable tags only need the name of the variable, e.g. `{{ myVariableName }}`.  Variable tags can also have filters applied to them by adding filter names after the variable name inside angle brackets `< >`.  Arguments can be passed inside parentheses `( )`, and multiple filters can be separated by a pipe `|` (e.g. `{{ myVariableName <filter | filterWithArgs('arg1', 'arg2')> }}`).
+- *Variable*: Inserts a value into the template.  Variable tags only need the name of the variable, e.g. `{{ myVariableName }}`.  Variable tags can also have filters applied to them by adding the filter name after a `|`.  Arguments can be passed inside parentheses `( )`, and multiple filters can be separated by a additional pipes `|` (e.g. `{{ myVariableName | filter | filterWithArgs('arg1', 'arg2') }}`).
 - *Part* or *SubTemplate*: Inserts another template into the current template.  Part tags must begin with "part." or "subTemplate.", followed by the tag name (e.g. `{{ part.otherTemplate }}` or `{{ subTemplate.otherTemplate }}`).
 - *Loop* or *ForEach*: Inserts a list of templates into the current template.  Loop tags must begin with "loop." or "forEach.", followed by the tag name (e.g. `{{ loop.otherTemplateList }}` or `{{ forEach.otherTemplateList }}`).
-- *Branch* or *Switch*: Enables branching logic in templates.  Branch tags must begin with "branch." or "switch.", followed by the tag name.  The name must be followed by options enclosed in brackets `[ ]`.  Each option uses the following format: "keyValue => branchResult;", where branchResult can be any of the four tag types, or a literal text value preceded by `@` (e.g. `{{ branch.myBranch [key1 => name; key2 => part.otherPart;] }}`, `{{ switch.loggedIn [True => part.loggedInMessage; False => @Please <a href='/login'>log in</a>.; ] }}`).
+- *Branch* or *Switch*: Enables branching logic in templates.  Branch tags must begin with "branch." or "switch.", followed by the tag name.  The name must be followed by options enclosed in brackets `[ ]`.  Each option uses the following format: "keyValue => branchResult", where branchResult can be a variable, part, or loop tag, or a literal text value enclosed in `"` or `'`.  Options are separated by commas (e.g. `{{ branch.myBranch [key1 => name, key2 => part.otherPart] }}`, `{{ switch.loggedIn [True => part.loggedInMessage, False => "Please <a href='/login'>log in</a>." ] }}`).
 
 The following example shows all four tag types in action:
 ```csharp
@@ -107,12 +107,12 @@ using Lissic;
 
 [TemplateText(@"Hello {{ name }}!
 
-Our next Templating Mania meeting will be on {{ date }} at {{ time <append('pm')|upper> }}.  Our meeting has the following agenda:
+Our next Templating Mania meeting will be on {{ date }} at {{ time | append('pm') | upper }}.  Our meeting has the following agenda:
 {{ loop.meetingTopics }}
 {{ branch.memberStatus [
-    Gold => part.goldMessage;
-    Standard => part.standardMessage;
-    None => @We look forward to seeing you there!  Please consider signing up to be a member today at {{ signUpLink }}!;
+    Gold => part.goldMessage,
+    Standard => part.standardMessage,
+    None => 'We look forward to seeing you there!  Please consider signing up to be a member today at {{ signUpLink }}!'
 ] }}
 
 Best Wishes,
@@ -122,7 +122,7 @@ public partial class NotSoSimpleTemplate {}
 
 // AgendaItem is another template, defined elsewhere
 List<LissicTemplate> agenda = [];
-forEach (var d in databaseData)
+foreach (var d in databaseData)
 {
     AgendaItem item = new() { topic = d.topic };
     agenda.Add(item);
@@ -150,7 +150,7 @@ Our next Templating Mania meeting will be on Wednesday, January 15th at 4:30PM. 
  - Election for new club Vice President
  - Budget
 
-We look forward to seeing you there!  Please consider signing up to be a member today at <a href='www.templatemania.com/signup'>templatemania.com</a>
+We look forward to seeing you there!  Please consider signing up to be a member today at <a href='www.templatemania.com/signup'>templatemania.com</a>!
 
 Best Wishes,
 

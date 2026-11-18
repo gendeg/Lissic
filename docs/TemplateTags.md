@@ -4,6 +4,7 @@
 - Tag Overview
   - Type and Name
   - Name Restrictions
+  - Optional Parentheses
 - Variables
   - Variable Filters
 - Parts (SubTemplate)
@@ -31,7 +32,25 @@ All tags open with "`{{`" and close with "`}}`".  Variable tags only need to con
 
 ##### Name Restrictions
 
-Tag names must be a legal C# property name.  Tag names must be unique, including across different tag types, and must not use a reserved name (see below).  However, the same tag can be used multiple times.  For example, you cannot have `{{ foo }}` and `{{ part.foo }}` in the same template, but `{{ foo }}` can be used as many times as is necessary.
+Tag names must be a legal C# property name.  Tag names must be unique, including across different tag types, and must not use a reserved name (see below).  However, the same tag can be used multiple times.  For example, you cannot have `{{ foo }}` and `{{ part.foo }}` in the same template, but `{{ foo }}` can be used as many times as is necessary to insert the same value.
+
+##### Optional Parentheses
+
+Parentheses can be used to enclose tags.  This option is only valid when an entire tag, including any options or filters, are enclosed.  Parentheses can be used to enclose tags inside of branch options.  This can be useful when options may otherwise be difficult to distinguish (e.g. `{{ branch.status [(member => name | upper | append(", member")), _ => ("not a member") ] }}`)
+
+The following are valid:
+- `{{ (var | filter) }}`
+- `{{ (branch.b [ k1 => (v1 | f1("arg") | f2), k2 => (part.v2) ]) }}`
+- `{{ branch.b [ k1 => (v1 | f1("arg") | f2), k2 => part.v2 ] }}`
+- `{{ (var) }}`
+- `{{ (loop.name) }}`
+
+The following are ***not*** valid:
+- `{{ (var) | filter }}`
+- `{{ var | (filter | filter2) }}`
+- `{{ branch.b [ (k1 => v1), k2 => part.v2 ] }}`
+- `{{ branch.b [ (k1 => v1, k2 => part.v2) ] }}`
+- `{{ (branch.b) [ k1 => v1, k2 => part.v2 ] }}`
 
 ---
 
@@ -41,13 +60,13 @@ Variables are used to directly insert text into a template.  Variable tags do no
 
 ##### Variable Filters
 
-Variables can also have filters to modify the text.  A filter must be listed after the tag name, inside a "`<`" and "`>`" (e.g. `{{ tagName <filterName> }}`).
+Variables can also have filters to modify the text.  A filter must be listed after the tag name, separated by a "`|`" (e.g. `{{ tagName | filterName }}`).
 
-Multiple filters can be applied by separating them with a "`|`" (e.g. `{{ tagName <filter1 | filter2> }}`).  Filters will be applied from left to right (i.e. `filter1` first then `filter2`, in this example)
+Multiple filters can be applied by separating them with additional "`|`"s (e.g. `{{ tagName | filter1 | filter2 }}`).  Filters will be applied from left to right (i.e. `filter1` first then `filter2`, in this example)
 
-Filters can also have arguments passed to them, inside parentheses (e.g. `{{ tagName < filterName("arg1", "arg2") > }}`).
+Filters can also have arguments passed to them, inside parentheses (e.g. `{{ tagName | filterName("arg1", "arg2") }}`).
 
-See FiltersAndFormatters.md for a list of available built-in filters and instructions on how to create custom filters.
+See [FiltersAndFormatters.md](https://github.com/gendeg/Lissic/blob/main/docs/FiltersAndFormatters.md) for a list of available built-in filters and instructions on how to create custom filters.
 
 ---
 
@@ -71,39 +90,41 @@ Loops can either be all the same template type or a mix of different template ty
 
 ### Branches
 
-Branches, also known as switches, are used to insert different text based on external input.  Branches can be identified by either `branch` or `switch` type, followed by a `.` and the tag name.  The branch options then follow the branch name inside brackets (e.g. `{{ branch.branchName [...options go here...] }}` or `{{ switch.stateValue [...options go here...] }}`).
+Branches, also known as switches, are used to insert different text based on external input.  Branches can be identified by either `branch` or `switch` type, followed by a `.` and the tag name.  The branch options then follow the branch name inside brackets (e.g. `{{ branch.branchName [...options go here...] }}` or `{{ switch.stateValue [...options go here...] }}`).  Options are separated by a `,` (a trailing `,` after the last option is allowed).
 
 In the parent template, the branch is assigned a text key value.  The key value is then used to determine which branch should be taken.
 
 ```
    "branchName" is assigned either "key1" or "key2" in the parent template
              ↓
-{{ branch.branchName [key1=>action1; key2=>action2;] }}
+{{ branch.branchName [key1=>action1, key2=>action2] }}
                        ↑              ↑
     the action is selected based on the key passed to "branchName"
 ```
 
 ##### Branch Options
 
-Branch options are a list of mappings between a key value and an action.  Actions can be any of the tag types, including other branches, or a literal text string.
+Branch options are a list of mappings between a key value and an action.  Actions can be any of the tag types, except other branches, or a literal text string.
 
-Options are formatted as `key=>action;` (e.g. `{{ branch.isLoggedIn [True=>name; False=>part.logInLink;] }}`).   Any number of key/action pairs can be included in a branch (e.g. `{{ switch.fruitType [apple=>part.apple; banana=>part.banana; cantaloupe=>part.cantaloupe;...] }}`).
+Options are formatted as `key=>action` (e.g. `{{ branch.isLoggedIn [True=>name, False=>part.logInLink] }}`).   Any number of key/action pairs can be included in a branch (e.g. `{{ switch.fruitType [apple=>part.apple, banana=>part.banana, cantaloupe=>part.cantaloupe, ...] }}`).
+
+A default option can be added with `_` as the key (e.g. `{{ branch.status [good=>ok, _=>bad] }}`).  The default will be used when no other keys match or no key is given at all.
 
 ##### Literal Text
 
-Branch actions can also insert literal text.  To insert literal text, the action should start with `@`.  All text following the `@` will be included in the text literal until the closing `;` is reached (e.g. `{{ branch.literalExample [taken=>@This branch is taken; notTaken=>@other text;] }}` will insert "This branch is taken" into the text).
+Branch actions can also insert literal text.  To insert literal text, enclose the text in `"` or `'` (e.g. `{{ branch.literalExample [taken=>"This branch is taken", notTaken=>"other text"] }}` will insert "This branch is taken" into the text).  Literal text can be enclosed in parentheses the same way that tags can be enclosed (e.g. the following is valid `{{ branch.pars [ key1 => ("don't get confused ,"), key2 => (part.v2) ] }}`).
 
-A semicolon can be inserted into the text with a double semicolon escape sequence.  "`;;`" will be inserted as "`;`", and the text literal will continue afterward (e.g. `{{ branch.literalExample [taken=>@This branch;; is taken; notTaken=>@other text;] }}` will insert "This branch; is taken" into the text).
+A quote can be inserted into the text by adding two quotes in a row (i.e. `""` or `''`).  The escape sequence is only necessary, and will only be parsed, for the type of quote used to enclose the text.  For example passing `taken` to `{{ branch.literalExample [taken=>"This ""branch'' is taken", notTaken=>"other text"] }}` will insert `This "branch'' is taken` into the text.
 
 Text literals will also be parsed for other tags, including other branches.  The following branches are valid and all nested tags will be parsed:
 ```
 {{ branch.nestedTags [
-    nestedVariable=>@This will retrieve the {{ name }} value from the template;
-    nestedPart => @This will retrieve the {{ part.insertMe }} template from the current template;
-    nestedBranch => @Lets do this again {{ branch.subBranch [
-        doNothing => @; 
-        doSomething => @actually, let's put {{ name }} here;
-    ]}}
+    nestedVariable=>"This will retrieve the {{ name }} value from the template",
+    nestedPart => "This will retrieve the {{ part.insertMe }} template from the current template",
+    nestedBranch => "Let's do this again {{ branch.subBranch [
+        doNothing => '',
+        doSomething => 'actually, let''s put {{ name }} here'
+    ]}}"
 ]}}
 ```
 NOTE: all tag names declared inside branches will be added to the list of properties in the template's data transfer object.
@@ -114,7 +135,7 @@ NOTE: all tag names declared inside branches will be added to the list of proper
 
 All tags are required by default, enforced by use of the `required` keyword in the data transfer object.  This means that a value ***must*** be assigned when the data transfer object is declared.  This behavior can be disabled individually on each tag or globally with the LissicIgnoreRequiredProperties option (see ConfigurationAndOptions.md for information on setting `LissicIgnoreRequiredProperties`).
 
-To mark an individual tag as optional, add a `?` after the tag name (e.g. `{{ phoneNumber? }}`, `{{ loop.optionalTable? }}`, or `{{ branch.ausDetails? [inPerson=>address; online=>vtcLink;] }}`).  This will remove the `required` keyword in the data transfer object.
+To mark an individual tag as optional, add a `?` after the tag name (e.g. `{{ phoneNumber? }}`, `{{ loop.optionalTable? }}`, or `{{ branch.ausDetails? [inPerson=>address, online=>vtcLink,] }}`).  This will remove the `required` keyword in the data transfer object.
 
 ---
 
@@ -122,31 +143,30 @@ To mark an individual tag as optional, add a `?` after the tag name (e.g. `{{ ph
 
 ##### Whitespace
 
-Lissic allows whitespace in most places inside tags, with two exceptions:
-- There cannot be any space before or after the `.` that connects a tag type to a tag name
-- There cannot be any space between a filter name and the parentheses that contain arguments
+Lissic allows whitespace in most places inside tags, with one exception: there cannot be any space before or after the `.` that connects a tag type to a tag name
+
 
 All of the following are valid tags:
 ```
 {{ myVar }}
-{{ myVar < filter > }}
-{{ myVar < filter( "arg1" , "arg2" ) | filter2 > }}
-{{myVar<filter(
+{{ myVar | filter }}
+{{ myVar | filter( "arg1" , "arg2" ) | filter2 }}
+{{myVar|filter(
     "arg1", 
     "arg2"
-)>}}
+)}}
+{{variable|filter ("arg")}}
 {{ part.myPart }}
 {{ loop.myLoop }}
-{{ branch.myBranch [ key1 => action ; key2 => action2 ; key3 => @literal text; ] }}
+{{ branch.myBranch [ key1 => action , key2 => action2 , key3 => "literal text" ] }}
 {{branch.myBranch[
-    key1 => action;
-    key2 => action2;
-    key3 => @literal text;
+    key1 => action,
+    key2 => action2,
+    key3 => "literal text"
 ]}}
 ```
 All of the following are ***not*** valid:
 ```
-{{variable<filter ("arg")>}}
 {{part .myPart}}
 {{part. myPart}}
 ```
@@ -155,11 +175,11 @@ All of the following are ***not*** valid:
 
 The following are not case sensitive:
 - Tag types, so `{{ type.name }}` is equivalent to `{{ Type.name }}` or `{{ TYPE.name }}`
-- Filter names, so `{{ name <capitalize> }}` is equivalent to `{{ name <Capitalize> }}` or `{{ name <CapITaliZe> }}`.
+- Filter names, so `{{ name | capitalize }}` is equivalent to `{{ name | Capitalize }}` or `{{ name | CapITaliZe }}`.
 
 The following are case sensitive:
 - Tag names, so `{{ type.name }}` is ***not*** equivalent to `{{ type.Name }}`
-- Branch keys, so `{{ branch.myBranch [key1=>data1;]}}` is ***not*** equivalent to `{{ branch.myBranch [Key1=>data1;]}}`
+- Branch keys, so `{{ branch.myBranch [key1=>data1]}}` is ***not*** equivalent to `{{ branch.myBranch [Key1=>data1]}}`
 
 ---
 
