@@ -140,7 +140,7 @@ using Lissic;
 
 namespace Tests.FakeSpace;
 
-[TemplateText(@"{{ branch.color[red=>name;blue=>part.sidebar;green=>@<b>{{ extra? }}</b>;] }}")]
+[TemplateText(@"{{ branch.color[red=>name,blue=>part.sidebar,green=>'<b>{{ extra? }}</b>',_=>'{{ loop.fallback }}'] }}")]
 public partial class WelcomeMessage { }
 """, "Lissic.WelcomeMessage.g.cs");
 
@@ -148,6 +148,7 @@ public partial class WelcomeMessage { }
         Assert.Contains("public required VariableValue name { get; set; }", source);
         Assert.Contains("public required PartValue sidebar { get; set; }", source);
         Assert.Contains("public VariableValue extra { get; set; }", source);
+        Assert.Contains("public required LoopValue fallback { get; set; }", source);
         Assert.Contains("case \"name\": if (name.IsEmpty) return -1; return name.WriteTo(writer);", source);
     }
 
@@ -159,7 +160,7 @@ using Lissic;
 
 namespace Tests.FakeSpace;
 
-[TemplateText(@"{{ branch.color[red=>@<div>{{ branch.shade[dark=>name;;] }}</div>;] }}")]
+[TemplateText(@"{{ branch.color[red=>'<div>{{ branch.shade[dark=>name] }}</div>'] }}")]
 public partial class WelcomeMessage { }
 """, "Lissic.WelcomeMessage.g.cs");
 
@@ -199,7 +200,7 @@ using Lissic;
 
 namespace Tests.FakeSpace;
 
-[TemplateText(@"{{ Name }} and {{ Name <upper> }} and {{ Name }}")]
+[TemplateText(@"{{ Name }} and {{ Name | upper }} and {{ Name }}")]
 public partial class WelcomeMessage { }
 """, "Lissic.WelcomeMessage.g.cs");
 
@@ -381,57 +382,6 @@ public class KnownFilter : IFilterFactory
 
 """;
 
-    [Theory]
-    [InlineData("{{ Name <upper }}")]
-    [InlineData("{{ Name <known(1,)> }}")]
-    [InlineData("{{ Name <known | > }}")]
-    [InlineData("{{ Name <known> trailing }}")]
-    [InlineData("{{ part")]
-    public void MalformedTemplate_ReportsErrorAndGeneratesNoTemplateSource(string template)
-    {
-        GeneratorDriver driver = SnapshotRunner.Run($$$"""
-{{{TemplateHeader}}}
-[TemplateText(@"{{{template}}}")]
-public partial class WelcomeMessage { }
-""");
-
-        GeneratorRunResult result = driver.GetRunResult().Results[0];
-        Diagnostic diagnostic = Assert.Single(result.Diagnostics, d => d.Id == "LISSIC005");
-        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-        Assert.Contains("WelcomeMessage", diagnostic.GetMessage());
-        Assert.DoesNotContain(result.GeneratedSources, source => source.HintName == "Lissic.WelcomeMessage.g.cs");
-    }
-
-    [Fact]
-    public void UnknownFilter_WarnsPerUseButStillGeneratesSource()
-    {
-        GeneratorDriver driver = SnapshotRunner.Run($$$"""
-{{{TemplateHeader}}}
-[TemplateText(@"{{ Name <known | nope> }} {{ branch.color[red=>Other <missing(1)>;] }}")]
-public partial class WelcomeMessage { }
-""");
-
-        GeneratorRunResult result = driver.GetRunResult().Results[0];
-        Diagnostic[] unknown = result.Diagnostics.Where(d => d.Id == "LISSIC006").ToArray();
-        Assert.Equal(2, unknown.Length);
-        Assert.All(unknown, d => Assert.Equal(DiagnosticSeverity.Warning, d.Severity));
-        Assert.Contains("'nope'", unknown[0].GetMessage());
-        Assert.Contains("'missing'", unknown[1].GetMessage());
-        Assert.Contains(result.GeneratedSources, source => source.HintName == "Lissic.WelcomeMessage.g.cs");
-    }
-
-    [Fact]
-    public void KnownFilters_AreMatchedCaseInsensitivelyWithoutDiagnostics()
-    {
-        string[] ids = DiagnosticIds($$$"""
-{{{TemplateHeader}}}
-[TemplateText(@"{{ Name | KNOWN(""x"") | Known }}")]
-public partial class WelcomeMessage { }
-""");
-
-        Assert.Empty(ids);
-    }
-
     [Fact]
     public void PathTemplate_MissingFile_ReportsOnlyMissingDiagnostic()
     {
@@ -471,7 +421,7 @@ public partial class WelcomeMessage { }
 {{{TemplateHeader}}}
 [TemplatePath("sub/hello.html")]
 public partial class WelcomeMessage { }
-""", templateFiles: new Dictionary<string, string> { ["sub/hello.html"] = "Hello" });
+""", templateFiles: new Dictionary<string, string> { ["sub/hello.html"] = "Hello {{ Name | known }} {{ branch.c [a => \"A\", _ => 'D'] }}" });
 
         GeneratorRunResult result = driver.GetRunResult().Results[0];
         Assert.Empty(result.Diagnostics);

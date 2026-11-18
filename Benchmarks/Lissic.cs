@@ -143,20 +143,20 @@ public class LissicBenchmarks : BaseBenchmarks
 [TemplateText("""
 <div id='catalog'>
   <header>
-    <h1>{{ title <upper> }}</h1>
-    <p class='subtitle'>{{ subtitle <truncate(57) | append("...")> }}</p>
+    <h1>{{ title | upper }}</h1>
+    <p class='subtitle'>{{ subtitle | truncate(57) | append("...") }}</p>
   </header>
-{{ loop.categories }}  <footer>{{ footerNote <truncate(37) | append("...")> }}</footer>
+{{ loop.categories }}  <footer>{{ footerNote | truncate(37) | append("...") }}</footer>
 </div>
 """)]
 public partial class CatalogLayout {}
 
 [TemplateText("""
-  <section class='category{{ branch.isFeatured [True=>@ featured; False=>@;] }}' id='{{ slug }}'>
-    <h2>{{ name <capitalize> }}</h2>
-    <p class='crumb'>Browse: {{ slug <replace("-", " ")> }}</p>
-    <p class='summary'>{{ summary <truncate(37) | append("...")> }}</p>
-{{ branch.hasProducts [True=>part.productList; False=>@    <p class='empty'>No products</p>;] }}
+  <section class='category{{ branch.isFeatured [True=>" featured", False=>""] }}' id='{{ slug }}'>
+    <h2>{{ name | capitalize }}</h2>
+    <p class='crumb'>Browse: {{ slug | replace("-", " ") }}</p>
+    <p class='summary'>{{ summary | truncate(37) | append("...") }}</p>
+{{ branch.hasProducts [True=>part.productList, False=>"    <p class='empty'>No products</p>"] }}
   </section>
 
 """)]
@@ -169,15 +169,15 @@ public partial class CatalogCategory {}
 public partial class CatalogProductList {}
 
 [TemplateText("""
-      <li class='product{{ branch.isNew [True=>@ new; False=>@;] }}' data-sku='{{ sku <lower> }}'>
+      <li class='product{{ branch.isNew [True=>" new", False=>""] }}' data-sku='{{ sku | lower }}'>
         <h3>{{ title }}</h3>
-        <span class='brand'>{{ brand <upper> }}</span>
-        {{ branch.onSale [True=>@<p class='price sale'>Now {{ price }} <del>Was {{ listPrice }}</del></p>; False=>@<p class='price'>Only {{ price }}</p>;] }}
-        {{ branch.inStock [True=>@<span class='stock in'>In stock</span>; False=>@<span class='stock out'>Sold out</span>;] }}
-        <p class='description'>{{ description <truncate(77) | append("...")> }}</p>
-{{ branch.hasTags [True=>part.tagList; False=>@;] }}
-{{ branch.hasVariants [True=>part.variantTable; False=>@;] }}
-{{ branch.hasReviews [True=>part.reviewList; False=>@;] }}
+        <span class='brand'>{{ brand | upper }}</span>
+        {{ branch.onSale [True=>"<p class='price sale'>Now {{ price }} <del>Was {{ listPrice }}</del></p>", False=>"<p class='price'>Only {{ price }}</p>"] }}
+        {{ branch.inStock [True=>"<span class='stock in'>In stock</span>", False=>"<span class='stock out'>Sold out</span>"] }}
+        <p class='description'>{{ description | truncate(77) | append("...") }}</p>
+{{ branch.hasTags [True=>part.tagList, False=>""] }}
+{{ branch.hasVariants [True=>part.variantTable, False=>""] }}
+{{ branch.hasReviews [True=>part.reviewList, False=>""] }}
       </li>
 
 """)]
@@ -190,7 +190,7 @@ public partial class CatalogProduct {}
 public partial class CatalogTagList {}
 
 [TemplateText("""
-          <a href='/tag/{{ label <lower> }}'>{{ label <upper> }}</a>{{ branch.isLast [True=>@; False=>@,;] }}
+          <a href='/tag/{{ label | lower }}'>{{ label | upper }}</a>{{ branch.isLast [True=>"", False=>","] }}
 
 """)]
 public partial class CatalogTag {}
@@ -202,11 +202,11 @@ public partial class CatalogTag {}
 public partial class CatalogVariantTable {}
 
 [TemplateText("""
-          <tr class='{{ branch.variantAvailable [True=>@available; False=>@unavailable;] }}'>
-            <td>{{ variantSku <lower> }}</td>
-            <td>{{ color <capitalize> }}</td>
-            <td>{{ size <upper> }}</td>
-            <td>{{ branch.variantAvailable [True=>@Yes; False=>@No;] }}</td>
+          <tr class='{{ branch.variantAvailable [True=>"available", False=>"unavailable"] }}'>
+            <td>{{ variantSku | lower }}</td>
+            <td>{{ color | capitalize }}</td>
+            <td>{{ size | upper }}</td>
+            <td>{{ branch.variantAvailable [True=>"Yes", False=>"No"] }}</td>
           </tr>
 
 """)]
@@ -220,9 +220,9 @@ public partial class CatalogReviewList {}
 
 [TemplateText("""
           <blockquote>
-            <h4>{{ reviewTitle <capitalize> }}</h4>
-            <span class='rating'>{{ rating }}</span>{{ branch.verified [True=>@ <em>Verified</em>; False=>@;] }}
-            <p>{{ body <truncate(47) | append("...")> }}</p>
+            <h4>{{ reviewTitle | capitalize }}</h4>
+            <span class='rating'>{{ rating }}</span>{{ branch.verified [True=>" <em>Verified</em>", False=>""] }}
+            <p>{{ body | truncate(47) | append("...") }}</p>
             <cite>{{ author }}</cite>
           </blockquote>
 
@@ -240,7 +240,7 @@ public partial class BenchOuter {}
     <li>
       <h2>{{ name }}</h2>
            Only {{ price }}
-           {{ description <truncate(12) | append("...")> }}
+           {{ description | truncate(12) | append("...") }}
     </li>
 """)]
 public partial class BenchInner {}

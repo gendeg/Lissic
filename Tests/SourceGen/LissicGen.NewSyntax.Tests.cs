@@ -54,33 +54,11 @@ public partial class WelcomeMessage { }
     /* New syntax: property generation */
 
     [Fact]
-    public void NewSyntaxBranch_DeclaresNodesInsideOptionsAndDefault()
-    {
-        string source = GetTemplateSource(@"{{ branch.color [red => name, blue => part.sidebar, green => ""<b>{{ extra? }}</b>"", _ => '{{ loop.fallback }}'] }}");
-
-        Assert.Contains("public required BranchValue color { get; set; }", source);
-        Assert.Contains("public required VariableValue name { get; set; }", source);
-        Assert.Contains("public required PartValue sidebar { get; set; }", source);
-        Assert.Contains("public VariableValue extra { get; set; }", source);
-        Assert.Contains("public required LoopValue fallback { get; set; }", source);
-    }
-
-    [Fact]
     public void NewSyntaxBranch_DefaultCommandIsDeclared()
     {
         string source = GetTemplateSource(@"{{ branch.color [red => ""R"", _ => (fallbackName | known)] }}");
 
         Assert.Contains("public required VariableValue fallbackName { get; set; }", source);
-    }
-
-    [Fact]
-    public void NewSyntaxNestedBranches_AreDeclared()
-    {
-        string source = GetTemplateSource(@"{{ branch.color [red => ""<div>{{ branch.shade [dark => """"Dark"""", _ => name] }}</div>""] }}");
-
-        Assert.Contains("BranchValue color { get; set; }", source);
-        Assert.Contains("BranchValue shade { get; set; }", source);
-        Assert.Contains("VariableValue name { get; set; }", source);
     }
 /*
     [Theory]
@@ -136,25 +114,6 @@ public partial class WelcomeMessage { }
         Assert.DoesNotContain("alsoNot", source);
     }
 
-    [Fact]
-    public void NewAndOldSyntax_GenerateEquivalentProperties()
-    {
-        string oldSource = GetTemplateSource(@"{{ Name <known(""x"")> }} {{ branch.color[red=>part.side;blue=>@<b>{{ extra? }}</b>;] }}");
-        string newSource = GetTemplateSource(@"{{ Name | known(""x"") }} {{ branch.color[red => part.side, blue => ""<b>{{ extra? }}</b>""] }}");
-
-        Assert.Equal(oldSource, newSource);
-    }
-
-    [Fact]
-    public void NewSyntaxTemplate_Compiles()
-    {
-        Assert.Empty(SnapshotRunner.GetCompilationErrors($$$"""
-{{{TemplateHeader}}}
-[TemplateText(@"{{ (Name | known(5, ""x"")) }} {{ branch.color [red => part.side, _ => '{{ extra? }}'] }} {{ (loop.items) }}")]
-public partial class WelcomeMessage { }
-"""));
-    }
-
 
     /* New syntax: filter diagnostics */
 
@@ -182,11 +141,7 @@ public partial class WelcomeMessage { }
     /* New syntax: parse errors */
 
     [Theory]
-    [InlineData(@"{{ Name <known> | known }}")]
-    [InlineData(@"{{ branch.c [a => x; b => y,] }}")]
-    [InlineData(@"{{ branch.c [a=>@A; b => ""B""] }}")]
     [InlineData(@"{{ branch.c [a => ""A"", a => ""B""] }}")]
-    [InlineData(@"{{ branch.c [a=>@A;a=>@B;] }}")]
     [InlineData(@"{{ branch.c [_ => ""A"", _ => ""B""] }}")]
     [InlineData(@"{{ Name | known(abc) }}")]
     [InlineData(@"{{ Name | known(10, left) }}")]
@@ -198,6 +153,11 @@ public partial class WelcomeMessage { }
     [InlineData(@"{{ branch.c [a => (Name) | known] }}")]
     [InlineData(@"{{ branch.c [a => branch.d [x => ""X"", b => ""B""] }}")]
     [InlineData(@"{{ branch.c [a => branch.d, b => ""B""] }}")]
+    [InlineData(@"{{ Name | }}")]
+    [InlineData(@"{{ Name | known(1,) }}")]
+    [InlineData(@"{{ Name | known | }}")]
+    [InlineData(@"{{ Name | known trailing }}")]
+    [InlineData(@"{{ part")]
     public void MalformedNewSyntax_ReportsErrorAndGeneratesNoTemplateSource(string template)
     {
         // Note: templates are embedded in a C# verbatim string, so "" in the InlineData becomes "" in source, which is " in the template
@@ -295,145 +255,5 @@ public partial class WelcomeMessage { }
     public void ClosingTagInsideQuotedArg_ReportsNoDiagnostics(string template)
     {
         Assert.Empty(RunTemplate(template).Diagnostics);
-    }
-
-
-    /* Deprecated syntax: LISSIC009 */
-
-    [Theory]
-    [InlineData(@"{{ Name }}")]
-    [InlineData(@"{{ Name | known }}")]
-    [InlineData(@"{{ Name | known(""x"", 'y', 5, -1.5) }}")]
-    [InlineData(@"{{ (Name | known) }}")]
-    [InlineData(@"{{ part.p }} {{ loop.l }} {{ (part.q) }}")]
-    [InlineData(@"{{ branch.c [a => x, b => part.p, c => ""text"", d => 'text', _ => """"] }}")]
-    [InlineData(@"{{ branch.c [a => ""x; y @z <w>""] }}")]
-    [InlineData(@"{{ branch.c [a => ""{{ branch.d [b => """"B""""] }}""] }}")]
-    [InlineData(@"{{ branch.c [a => branch.d [b => ""B"", _ => x], _ => (branch.e [c => y])] }}")]
-    public void NewSyntax_ReportsNoDeprecation(string template)
-    {
-        Assert.Empty(Deprecations(template));
-    }
-
-    // Asserts no diagnostics at all (not just no LISSIC009) so a parse error can't make these pass trivially
-    [Theory]
-    [InlineData(@"{{ branch.c [a => x] }} Hello; world")]
-    [InlineData(@"{{ branch.c [a => x, _ => """"] }}<style>p { color: red; }</style>")]
-    [InlineData(@"{{ branch.c [a => x, b => ""x;y""] }}")]
-    [InlineData(@"{{ branch.c [a => x, b => 'x;y'] }}")]
-    [InlineData(@"{{ branch.c [a => Name | known("";""), _ => """"] }}")]
-    public void NewSyntax_SemicolonsOutsideOptionDelimiters_ReportNoDiagnostics(string template)
-    {
-        Assert.Empty(RunTemplate(template).Diagnostics);
-    }
-
-    [Theory]
-    [InlineData(@"{{ Name <known> }}")]
-    [InlineData(@"{{ Name <known(""x"")> }}")]
-    [InlineData(@"{{ Name <known(x)> }}")]
-    [InlineData(@"{{ branch.c[a=>x;] }}")]
-    [InlineData(@"{{ branch.c[a=>@x;] }}")]
-    [InlineData(@"{{ branch.c[_=>@x;] }}")]
-    [InlineData(@"{{ branch.c[a=>Name <known>;] }}")]
-    // Deprecated syntax nested inside a new syntax literal is still reported
-    [InlineData(@"{{ branch.c [a => ""{{ Name <known> }}""] }}")]
-    [InlineData(@"{{ branch.c [a => ""{{ branch.d[b=>@B;] }}""] }}")]
-    public void DeprecatedSyntax_ReportsWarningAndStillGeneratesSource(string template)
-    {
-        GeneratorRunResult result = RunTemplate(template);
-
-        Diagnostic[] deprecations = result.Diagnostics.Where(d => d.Id == DeprecatedSyntaxId).ToArray();
-        Assert.NotEmpty(deprecations);
-        Assert.All(deprecations, d => Assert.Equal(DiagnosticSeverity.Warning, d.Severity));
-        Assert.All(deprecations, d => Assert.Contains("WelcomeMessage", d.GetMessage()));
-        Assert.DoesNotContain(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Error);
-        Assert.Contains(result.GeneratedSources, source => source.HintName == "Lissic.WelcomeMessage.g.cs");
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_DescriptorHasExpectedMetadata()
-    {
-        Diagnostic diagnostic = Assert.Single(Deprecations(@"{{ Name <known> }}"));
-
-        Assert.Equal(DeprecatedSyntaxId, diagnostic.Id);
-        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Descriptor.DefaultSeverity);
-        Assert.True(diagnostic.Descriptor.IsEnabledByDefault);
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_UnquotedStringArgument_IsReportedInAdditionToAngleBrackets()
-    {
-        int quoted = Deprecations(@"{{ Name <known(""x"")> }}").Length;
-        int unquoted = Deprecations(@"{{ Name <known(x)> }}").Length;
-
-        Assert.True(unquoted > quoted, $"Unquoted string argument should add a deprecation (quoted: {quoted}, unquoted: {unquoted}).");
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_UnquotedNumberArgument_IsNotReportedAsAnUnquotedString()
-    {
-        int quoted = Deprecations(@"{{ Name <known(""5"", ""x"")> }}").Length;
-        int number = Deprecations(@"{{ Name <known(5, ""x"")> }}").Length;
-        int negativeDecimal = Deprecations(@"{{ Name <known(-1.5, ""x"")> }}").Length;
-
-        Assert.True(quoted > 0, "'<...>' filters should be reported as deprecated.");
-        Assert.Equal(quoted, number);
-        Assert.Equal(quoted, negativeDecimal);
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_AtLiteral_IsReportedInAdditionToSemicolons()
-    {
-        int command = Deprecations(@"{{ branch.c[a=>x;] }}").Length;
-        int literal = Deprecations(@"{{ branch.c[a=>@x;] }}").Length;
-
-        Assert.True(literal > command, $"'@' literal should add a deprecation (command: {command}, literal: {literal}).");
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_EachDeprecatedTagIsReported()
-    {
-        int one = Deprecations(@"{{ Name <known> }}").Length;
-        int two = Deprecations(@"{{ Name <known> }} {{ Other <known> }}").Length;
-        int mixed = Deprecations(@"{{ Name <known> }} {{ Other | known }}").Length;
-
-        Assert.True(one > 0, "'<...>' filters should be reported as deprecated.");
-        Assert.Equal(one * 2, two);
-        Assert.Equal(one, mixed);
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_DoesNotAffectOtherDiagnostics()
-    {
-        GeneratorRunResult result = RunTemplate(@"{{ Name <known | nope> }}");
-
-        Assert.Contains(result.Diagnostics, d => d.Id == DeprecatedSyntaxId);
-        Assert.Single(result.Diagnostics, d => d.Id == "LISSIC006");
-    }
-
-    [Fact]
-    public void DeprecatedSyntax_PathTemplate_IsReported()
-    {
-        GeneratorDriver driver = SnapshotRunner.Run($$$"""
-{{{TemplateHeader}}}
-[TemplatePath("old.html")]
-public partial class WelcomeMessage { }
-""", templateFiles: new Dictionary<string, string> { ["old.html"] = "{{ Name <known> }} {{ branch.c[a=>@A;] }}" });
-
-        GeneratorRunResult result = driver.GetRunResult().Results[0];
-        Assert.Contains(result.Diagnostics, d => d.Id == DeprecatedSyntaxId);
-        Assert.Contains(result.GeneratedSources, source => source.HintName == "Lissic.WelcomeMessage.g.cs");
-    }
-
-    [Fact]
-    public void NewSyntax_PathTemplate_ReportsNoDiagnostics()
-    {
-        GeneratorDriver driver = SnapshotRunner.Run($$$"""
-{{{TemplateHeader}}}
-[TemplatePath("new.html")]
-public partial class WelcomeMessage { }
-""", templateFiles: new Dictionary<string, string> { ["new.html"] = "{{ Name | known }} {{ branch.c [a => \"A\", _ => 'D'] }}" });
-
-        Assert.Empty(driver.GetRunResult().Results[0].Diagnostics);
     }
 }

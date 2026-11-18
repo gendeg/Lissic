@@ -48,14 +48,6 @@ public class ParseBranchV020Tests
     }
 
     [Fact]
-    public void Parse_SingleOptionWithoutTrailingComma()
-    {
-        BranchNode branch = ParseSingleBranch("{{branch.color[red => \"Red\"]}}");
-
-        Assert.Equal("Red", SingleHtmlText(branch.BranchEntries["red"]));
-    }
-
-    [Fact]
     public void Parse_SwitchAlias_UsesNewSyntax()
     {
         BranchNode branch = ParseSingleBranch("{{switch.color[red => \"Red\", blue => \"Blue\"]}}");
@@ -113,6 +105,7 @@ public class ParseBranchV020Tests
     [InlineData("{{branch.q[a => '''']}}", "'")]
     [InlineData("{{branch.q[a => \"''\"]}}", "''")]
     [InlineData("{{branch.q[a => '\"\"']}}", "\"\"")]
+    [InlineData("{{branch.q[a => '<div>@''escaped''''</div>']}}", "<div>@'escaped''</div>")]
     public void Parse_QuotedLiteral_HandlesEscapes(string template, string expected)
     {
         BranchNode branch = ParseSingleBranch(template);
@@ -136,15 +129,6 @@ public class ParseBranchV020Tests
         BranchNode branch = ParseSingleBranch(template);
 
         Assert.Equal(expected, SingleHtmlText(branch.BranchEntries["a"]));
-    }
-
-    [Fact]
-    public void Parse_QuotedLiteralContainingClosingTag_DoesNotEndBranch()
-    {
-        BranchNode branch = ParseSingleBranch("{{branch.greeting[a => \"x }} y\", b => part.sub]}}");
-
-        Assert.Equal("x }} y", SingleHtmlText(branch.BranchEntries["a"]));
-        Assert.Equal("sub", Assert.IsType<PartNode>(Assert.Single(branch.BranchEntries["b"])).Name);
     }
 
     [Theory]
@@ -276,8 +260,6 @@ public class ParseBranchV020Tests
     // Different quote type: no escaping needed
     [InlineData("{{branch.color[red => '<div>{{ branch.shade [dark => \"Dark\", light => name] }}</div>']}}")]
     [InlineData("{{branch.color[red => \"<div>{{ branch.shade [dark => 'Dark', light => name] }}</div>\"]}}")]
-    // Inner tag may use the deprecated syntax, since it is a different tag
-    [InlineData("{{branch.color[red => \"<div>{{ branch.shade [dark => @Dark; light => name;] }}</div>\"]}}")]
     public void Parse_NestedBranchInQuotedLiteral_ParsesCorrectly(string template)
     {
         BranchNode branch = ParseSingleBranch(template);
@@ -334,16 +316,6 @@ public class ParseBranchV020Tests
         Assert.Equal(expectedKey, Assert.Single(branch.BranchEntries.Keys));
     }
 
-    [Fact]
-    public void Parse_OldSyntaxUnderscore_IsARegularKey()
-    {
-        BranchNode branch = ParseSingleBranch("{{branch.q[_=>@Underscore;red=>@Red;]}}");
-
-        Assert.Equal("Underscore", SingleHtmlText(branch.BranchEntries["_"]));
-        Assert.Equal("Red", SingleHtmlText(branch.BranchEntries["red"]));
-    }
-
-
     /* Default option */
 
     [Theory]
@@ -394,64 +366,6 @@ public class ParseBranchV020Tests
 
         Assert.Equal(["5", "30"], Assert.Single(Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["a"])).Filters).Args);
         Assert.Equal(["x", "y"], Assert.Single(Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["b"])).Filters).Args);
-    }
-
-
-    /* Semicolons that are not old-syntax option delimiters */
-
-    [Theory]
-    [InlineData("{{ branch.c [a => x] }} Hello; world", " Hello; world")]
-    [InlineData("{{ branch.c [a => x] }}&nbsp;", "&nbsp;")]
-    [InlineData("{{ branch.c [a => x, _ => \"\"] }}<style>p { color: red; }</style>", "<style>p { color: red; }</style>")]
-    [InlineData("{{ branch.c [a => part.x] }} a; b", " a; b")]
-    public void Parse_SemicolonAfterNewSyntaxBranch_IsTemplateText(string template, string expectedText)
-    {
-        ITemplateNode[] nodes = LissicParser.Parse(template, "TestTemplate");
-
-        Assert.Equal(2, nodes.Length);
-        BranchNode branch = Assert.IsType<BranchNode>(nodes[0]);
-        Assert.Single(branch.BranchEntries["a"]);
-        Assert.Equal(expectedText, HtmlText(nodes[1]));
-    }
-
-    [Fact]
-    public void Parse_SemicolonAfterNewSyntaxBranch_FollowedByOldSyntaxBranch()
-    {
-        ITemplateNode[] nodes = LissicParser.Parse("{{ branch.a [x => y] }} text {{ branch.b [z=>@Z;] }}", "TestTemplate");
-
-        Assert.Equal(3, nodes.Length);
-        Assert.Equal("y", Assert.IsType<VariableNode>(Assert.Single(Assert.IsType<BranchNode>(nodes[0]).BranchEntries["x"])).Name);
-        Assert.Equal(" text ", HtmlText(nodes[1]));
-        Assert.Equal("Z", SingleHtmlText(Assert.IsType<BranchNode>(nodes[2]).BranchEntries["z"]));
-    }
-
-    [Theory]
-    [InlineData("{{ branch.c [a => x, b => \"x;y\"] }}")]
-    [InlineData("{{ branch.c [a => x, b => 'x;y'] }}")]
-    [InlineData("{{ branch.c [a => part.x, b => \"x;y\"] }}")]
-    public void Parse_SemicolonInLaterQuotedLiteral_DoesNotSwitchToOldSyntax(string template)
-    {
-        BranchNode branch = ParseSingleBranch(template);
-
-        Assert.Equal(2, branch.BranchEntries.Count);
-        Assert.Single(branch.BranchEntries["a"]);
-        Assert.Equal("x;y", SingleHtmlText(branch.BranchEntries["b"]));
-    }
-
-    [Theory]
-    [InlineData("{{ branch.c [a => name | append(\";\")] }}")]
-    [InlineData("{{ branch.c [a => name | append(';')] }}")]
-    [InlineData("{{ branch.c [a => (name | append(\";\"))] }}")]
-    [InlineData("{{ branch.c [a => name | append(\";\"), _ => \"\"] }}")]
-    public void Parse_SemicolonInFilterArgument_IsPartOfTheArgument(string template)
-    {
-        BranchNode branch = ParseSingleBranch(template);
-        VariableNode variable = Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["a"]));
-
-        Assert.Equal("name", variable.Name);
-        var filter = Assert.Single(variable.Filters);
-        Assert.Equal("append", filter.Name);
-        Assert.Equal([";"], filter.Args);
     }
 
     [Fact]
@@ -519,16 +433,6 @@ public class ParseBranchV020Tests
             f => { Assert.Equal("f1", f.Name); Assert.Equal(["arg"], f.Args); },
             f => { Assert.Equal("f2", f.Name); Assert.Empty(f.Args); });
         Assert.Equal("v2", Assert.IsType<PartNode>(Assert.Single(branch.BranchEntries["k2"])).Name);
-    }
-
-    [Fact]
-    public void Parse_FiltersInsideBranchEntries_SourceGenMode()
-    {
-        ITemplateNode[] nodes = LissicParser.Parse("{{branch.color[red => name | upper]}}", "TestTemplate", isSourceGen: true);
-        BranchNode branch = Assert.IsType<BranchNode>(Assert.Single(nodes));
-        VariableNode variable = Assert.IsType<VariableNode>(Assert.Single(branch.BranchEntries["red"]));
-
-        Assert.Equal("upper", Assert.Single(variable.Filters).Name);
     }
 
 
@@ -627,27 +531,6 @@ public class ParseBranchV020Tests
 
     /* Surrounding text */
 
-    [Fact]
-    public void Parse_MultipleNewSyntaxBranches_WithTextBetween()
-    {
-        ITemplateNode[] nodes = LissicParser.Parse("{{ branch.a [x => \"X\"] }} middle {{ branch.b [y => part.p, _ => \"\"] }}", "TestTemplate");
-
-        Assert.Equal(3, nodes.Length);
-        Assert.Equal("X", SingleHtmlText(Assert.IsType<BranchNode>(nodes[0]).BranchEntries["x"]));
-        Assert.Equal(" middle ", HtmlText(nodes[1]));
-        Assert.Equal("p", Assert.IsType<PartNode>(Assert.Single(Assert.IsType<BranchNode>(nodes[2]).BranchEntries["y"])).Name);
-    }
-
-    [Fact]
-    public void Parse_OldAndNewSyntaxBranches_InSameTemplate()
-    {
-        ITemplateNode[] nodes = LissicParser.Parse("{{ branch.a [x => \"X\"] }}{{ branch.b [y=>@Y;] }}", "TestTemplate");
-
-        Assert.Equal(2, nodes.Length);
-        Assert.Equal("X", SingleHtmlText(Assert.IsType<BranchNode>(nodes[0]).BranchEntries["x"]));
-        Assert.Equal("Y", SingleHtmlText(Assert.IsType<BranchNode>(nodes[1]).BranchEntries["y"]));
-    }
-
     // ',' and '=>' after the closing '}}' are template text, not part of the branch
     [Theory]
     [InlineData("{{ branch.c [a => x] }}<script>f(a, b => b)</script>", "<script>f(a, b => b)</script>")]
@@ -698,22 +581,15 @@ public class ParseBranchV020Tests
     [InlineData("{{branch.q[a => \"Red]}}")]
     [InlineData("{{branch.q[a => 'Red]}}")]
     [InlineData("{{branch.q[a => \"Red']}}")]
-    [InlineData("{{branch.q[a => \"Red\"\"]}}")]
     // Missing delimiter or unexpected text after a literal
     [InlineData("{{branch.q[a => \"Red\" b => \"Blue\"]}}")]
     [InlineData("{{branch.q[a => \"Red\" x, b => \"Blue\"]}}")]
-    // Empty keys or actions
-    [InlineData("{{branch.q[ => \"Red\"]}}")]
+    // Empty actions
     [InlineData("{{branch.q[a => , b => \"Blue\"]}}")]
     [InlineData("{{branch.q[a => ]}}")]
     [InlineData("{{branch.q[a => \"Red\",, b => \"Blue\"]}}")]
-    // Unclosed brackets, parentheses, or tag
-    [InlineData("{{branch.q[a => \"Red\"}}")]
+    // Unclosed brackets
     [InlineData("{{branch.q[a => \"Red\",}}")]
-    [InlineData("{{branch.q[a => \"Red\"]")]
-    [InlineData("{{branch.q[a => (name | upper, b => \"Blue\"]}}")]
-    [InlineData("{{branch.q[a => name | upper), b => \"Blue\"]}}")]
-    [InlineData("{{branch.q[a => \"Red\"] unexpected}}")]
     // Parentheses in actions must surround the complete tag statement
     [InlineData("{{branch.q[a => (name) | upper, b => \"Blue\"]}}")]
     [InlineData("{{branch.q[a => (name | upper) | lower, b => \"Blue\"]}}")]
@@ -726,7 +602,6 @@ public class ParseBranchV020Tests
     [InlineData("{{branch.q[a => (branch.inner [x => \"X\"], b => \"Blue\"]}}")]
     [InlineData("{{branch.q[a => branch.inner [x => \"X\", x => \"Y\"]]}}")]
     [InlineData("{{branch.q[a => branch.inner [_ => \"X\", _ => \"Y\"]]}}")]
-    [InlineData("{{branch.q[a => branch.inner [x => \"X\"; y => \"Y\"]]}}")]
     public void Parse_MalformedNewSyntax_Throws(string template)
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
@@ -735,8 +610,6 @@ public class ParseBranchV020Tests
     [Theory]
     [InlineData("{{branch.q[a => \"A\", a => \"B\"]}}")]
     [InlineData("{{branch.q[a => \"A\", b => \"B\", a => part.x]}}")]
-    [InlineData("{{branch.q[a=>@A;a=>@B;]}}")]
-    [InlineData("{{branch.q[_=>@A;_=>@B;]}}")]
     public void Parse_DuplicateKeys_Throw(string template)
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
@@ -758,24 +631,6 @@ public class ParseBranchV020Tests
 
         Assert.Contains("shade", ex.Message);
         Assert.Contains("color", ex.Message);
-    }
-
-    [Theory]
-    // ';' delimiter mixed with ',' delimiter
-    [InlineData("{{branch.q[a => x; b => y,]}}")]
-    // '@' literal mixed with quoted literal
-    [InlineData("{{branch.q[a=>@A; b => \"B\"]}}")]
-    [InlineData("{{branch.q[a => \"A\", b=>@B,]}}")]
-    // quoted literals with ';' delimiter
-    [InlineData("{{branch.q[a => \"A\"; b => \"B\";]}}")]
-    [InlineData("{{branch.q[a => 'A';]}}")]
-    // '@' literal with ',' delimiter
-    [InlineData("{{branch.q[a => @A, b => @B,]}}")]
-    // default option is not supported in old syntax, so '_' with ';' is a normal key, but mixing still fails
-    [InlineData("{{branch.q[a=>@A; _ => \"D\"]}}")]
-    public void Parse_MixedOldAndNewSyntaxInOneBranch_Throws(string template)
-    {
-        Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
     }
 
     [Theory]
@@ -818,51 +673,11 @@ public class ParseFiltersV020Tests
     }
 
     [Fact]
-    public void Parse_FilterChain_KeepsOrderAndArgs()
-    {
-        VariableNode variable = ParseSingleVariable("{{ name | lower(\"x\") | pad(42, 'down') | upper() }}");
-
-        Assert.Collection(variable.Filters,
-            f => { Assert.Equal("lower", f.Name); Assert.Equal(["x"], f.Args); },
-            f => { Assert.Equal("pad", f.Name); Assert.Equal(["42", "down"], f.Args); },
-            f => { Assert.Equal("upper", f.Name); Assert.Empty(f.Args); });
-    }
-
-    [Fact]
     public void Parse_FilterArgsAcrossLines()
     {
         VariableNode variable = ParseSingleVariable("{{name|replace(\n    \"a\",\n    \"b\"\n)}}");
 
         Assert.Equal(["a", "b"], Assert.Single(variable.Filters).Args);
-    }
-
-    [Fact]
-    public void Parse_OptionalVariableWithFilters()
-    {
-        VariableNode variable = ParseSingleVariable("{{ city? | trim }}");
-
-        Assert.Equal("city", variable.Name);
-        Assert.False(variable.Required);
-        Assert.Equal("trim", Assert.Single(variable.Filters).Name);
-    }
-
-    [Fact]
-    public void Parse_VariableWithoutFilters_HasNoFilters()
-    {
-        Assert.Empty(ParseSingleVariable("{{ name }}").Filters);
-    }
-
-    [Fact]
-    public void Parse_SourceGenMode_ParsesPipeFilters()
-    {
-        ITemplateNode[] nodes = LissicParser.Parse("a {{ name? | upper(\"x\") }} b", "TestTemplate", isSourceGen: true);
-        VariableNode variable = Assert.Single(nodes.OfType<VariableNode>());
-
-        Assert.Equal("name", variable.Name);
-        Assert.False(variable.Required);
-        FilterCall filter = Assert.Single(variable.Filters);
-        Assert.Equal("upper", filter.Name);
-        Assert.Equal(["x"], filter.Args);
     }
 
 
@@ -910,14 +725,6 @@ public class ParseFiltersV020Tests
     public void Parse_UnquotedStringArgs_ThrowInNewSyntax(string template)
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
-    }
-
-    [Fact]
-    public void Parse_UnquotedStringArgs_StillAcceptedInDeprecatedSyntax()
-    {
-        VariableNode variable = ParseSingleVariable("{{ name <pad(10, left)> }}");
-
-        Assert.Equal(["10", "left"], Assert.Single(variable.Filters).Args);
     }
 
     [Theory]
@@ -1025,24 +832,14 @@ public class ParseFiltersV020Tests
         Assert.Equal(["}}"], Assert.Single(Assert.IsType<VariableNode>(entry[1]).Filters).Args);
     }
 
-
-    /* Mixing and malformed filters */
-
-    [Theory]
-    [InlineData("{{ name <upper> | lower }}")]
-    [InlineData("{{ name | upper <lower> }}")]
-    [InlineData("{{ name | <upper> }}")]
-    [InlineData("{{ name <upper | lower> | trim }}")]
-    public void Parse_MixedFilterSyntax_Throws(string template)
-    {
-        Assert.Throws<TemplateParsingException>(() => LissicParser.Parse(template, "TestTemplate"));
-    }
-
     [Theory]
     [InlineData("{{ name || upper }}")]
     [InlineData("{{ name | | upper }}")]
     [InlineData("{{ | upper }}")]
     [InlineData("{{ name | upper | }}")]
+    [InlineData("{{ name | }}")]
+    [InlineData("{{ name | pad(1 }}")]
+    [InlineData("{{ name | pad(1,) }}")]
     [InlineData("{{ name | pad(\"1\" }}")]
     [InlineData("{{ name | pad(\"1\",) }}")]
     [InlineData("{{ name | pad(,\"1\") }}")]

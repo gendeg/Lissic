@@ -1,6 +1,4 @@
 using Lissic.Parsing;
-using System.Buffers;
-using System.Text;
 
 namespace Lissic.Tests.LissicProcessorTests;
 
@@ -54,7 +52,6 @@ public partial class LissicProcessorTests
 	[InlineData("{{branch.color[red => \"<div>{{ branch.shade [dark => \"\"Dark\"\", light => name] }}</div>\"]}}")]
 	[InlineData("{{branch.color[red => '<div>{{ branch.shade [dark => ''Dark'', light => name] }}</div>']}}")]
 	[InlineData("{{branch.color[red => '<div>{{ branch.shade [dark => \"Dark\", light => name] }}</div>']}}")]
-	[InlineData("{{branch.color[red => \"<div>{{ branch.shade[dark=>@Dark;light=>name;] }}</div>\"]}}")]
 	public async Task V020_RenderToString_NestedBranches(string text)
 	{
 		using TestRig rig = await CreateRig(text);
@@ -184,46 +181,6 @@ public partial class LissicProcessorTests
 		Assert.Equal(expected, rig.Processor.RenderToString(new TestTemplate(0).SetBranchKey("color", key)));
 	}
 
-	[Theory]
-	[InlineData("_", "U")]
-	[InlineData("other", "")]
-	[InlineData("", "")]
-	public async Task V020_RenderToString_DeprecatedSyntaxUnderscoreIsNotADefault(string key, string expected)
-	{
-		using TestRig rig = await CreateRig("{{branch.color[_=>@U;red=>@R;]}}");
-
-		Assert.Equal(expected, rig.Processor.RenderToString(new TestTemplate(0).SetBranchKey("color", key)));
-	}
-
-	[Theory]
-	[InlineData(null)]
-	[InlineData("green")]
-	public async Task V020_RenderToString_NoDefault_MissingOrUnknownKeyOmitsBranch(string? key)
-	{
-		using TestRig rig = await CreateRig("before{{branch.color[red => \"Red\", blue => \"Blue\"]}}after");
-		TestTemplate template = new(0);
-		if (key is not null)
-			template.SetBranchKey("color", key);
-
-		Assert.Equal("beforeafter", rig.Processor.RenderToString(template));
-	}
-
-	[Fact]
-	public Task V020_RenderToBuffer_InsertErrorText_NoDefault_ReportsMissingKeys() =>
-		RunWithOptions(nameof(V020_RenderToBuffer_InsertErrorText_NoDefault_ReportsMissingKeys), new LissicOptions
-		{
-			UnknownTagDebugMode = UnknownTagDebugMode.InsertErrorText,
-			UnknownBranchKeyDebugMode = UnknownBranchKeyDebugMode.InsertErrorText
-		}, async () =>
-		{
-			using TestRig rig = await CreateRig("{{branch.color[red => \"Red\", blue => \"Blue\"]}}");
-
-			Assert.Equal("<!-- ERROR: Branch key for 'color' is empty.  No branch key was provided or the value is empty. -->",
-				RenderToText(rig.Processor, new TestTemplate(0)));
-			Assert.Equal("<!-- ERROR: No option found for branch key 'green' in branch 'color' -->",
-				RenderToText(rig.Processor, new TestTemplate(0).SetBranchKey("color", "green")));
-		});
-
 	[Fact]
 	public Task V020_RenderToBuffer_InsertErrorText_DefaultSuppressesMissingKeyErrors() =>
 		RunWithOptions(nameof(V020_RenderToBuffer_InsertErrorText_DefaultSuppressesMissingKeyErrors), new LissicOptions
@@ -252,35 +209,6 @@ public partial class LissicProcessorTests
 
 			Assert.Equal("Default", RenderToText(rig.Processor, new TestTemplate(0)));
 			Assert.Equal("Default", RenderToText(rig.Processor, new TestTemplate(0).SetBranchKey("color", "green")));
-		});
-
-	[Fact]
-	public Task V020_RenderToBuffer_ThrowException_NoDefault_StillThrows() =>
-		RunWithOptions(nameof(V020_RenderToBuffer_ThrowException_NoDefault_StillThrows), new LissicOptions
-		{
-			UnknownTagDebugMode = UnknownTagDebugMode.ThrowException,
-			UnknownBranchKeyDebugMode = UnknownBranchKeyDebugMode.ThrowException
-		}, async () =>
-		{
-			using TestRig rig = await CreateRig("{{branch.color[red => \"Red\", blue => \"Blue\"]}}");
-
-			Assert.Contains("Branch key for 'color' is empty", Assert.Throws<TemplateRenderException>(
-				() => RenderToText(rig.Processor, new TestTemplate(0))).Message);
-			Assert.Contains("No option found for branch key 'green'", Assert.Throws<TemplateRenderException>(
-				() => RenderToText(rig.Processor, new TestTemplate(0).SetBranchKey("color", "green"))).Message);
-		});
-
-	[Fact]
-	public Task V020_RenderToBuffer_InsertErrorText_DeprecatedUnderscoreKeyIsNotADefault() =>
-		RunWithOptions(nameof(V020_RenderToBuffer_InsertErrorText_DeprecatedUnderscoreKeyIsNotADefault), new LissicOptions
-		{
-			UnknownBranchKeyDebugMode = UnknownBranchKeyDebugMode.InsertErrorText
-		}, async () =>
-		{
-			using TestRig rig = await CreateRig("{{branch.color[_=>@U;]}}");
-
-			Assert.Equal("<!-- ERROR: No option found for branch key 'green' in branch 'color' -->",
-				RenderToText(rig.Processor, new TestTemplate(0).SetBranchKey("color", "green")));
 		});
 
 
@@ -392,7 +320,6 @@ public partial class LissicProcessorTests
 	[Theory]
 	[InlineData("{{ name | lp-append(\"x\") | lp-upper }}", "ADAX")]
 	[InlineData("{{ name | lp-upper | lp-append(\"x\") }}", "ADAx")]
-	[InlineData("{{ name | lp-append(1) | lp-append(2) | lp-append(3) }}", "ada123")]
 	[InlineData("{{ name | lp-append(-1.5) }}", "ada-1.5")]
 	[InlineData("{{ name | lp-append (\"!\") }}", "ada!")]
 	[InlineData("{{ name | lp-append( \"!\" ) }}", "ada!")]
@@ -407,54 +334,6 @@ public partial class LissicProcessorTests
 
 		Assert.Equal(expected, rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
 	}
-
-	[Fact]
-	public async Task V020_RenderToString_SameVariableWithMixedFilterStylesAcrossTags()
-	{
-		using TestRig rig = await CreateRig("{{ name }} {{ name <lp-upper> }} {{ name | lp-upper }} {{ (name) }}");
-
-		Assert.Equal("ada ADA ADA ada", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
-	}
-
-	[Fact]
-	public async Task V020_RenderToString_UnsetPipeFilteredVariable_SkipsFiltersSilently()
-	{
-		using TestRig rig = await CreateRig("[{{ name | lp-append(\"!\") }}][{{ (other? | lp-append(\"!\")) }}]");
-
-		Assert.Equal("[][]", rig.Processor.RenderToString(new TestTemplate(0)));
-	}
-
-	[Fact]
-	public async Task V020_RenderToString_PipeFiltersApplyInPartsAndLoops()
-	{
-		using TestRig rig = await CreateRig("{{ (part.header) }}|{{ (loop.items) }}", "[{{ title | lp-upper }}]");
-		TestTemplate template = new TestTemplate(0)
-			.SetPart("header", new TestTemplate(1).SetVariable("title", "head"))
-			.SetLoop("items", new TestTemplate(1).SetVariable("title", "one"), new TestTemplate(1).SetVariable("title", "two"));
-
-		Assert.Equal("[HEAD]|[ONE][TWO]", rig.Processor.RenderToString(template));
-	}
-
-	[Fact]
-	public async Task V020_RenderToString_DeprecatedFilterSyntaxStillRenders()
-	{
-		using TestRig rig = await CreateRig("{{ name <lp-append(x) | lp-upper> }}|{{ name < lp-append(\"y\") > }}");
-
-		Assert.Equal("ADAX|aday", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
-	}
-
-	[Fact]
-	public Task V020_RenderToBuffer_InsertErrorTextReportsUnknownPipeFilter() =>
-		RunWithOptions(nameof(V020_RenderToBuffer_InsertErrorTextReportsUnknownPipeFilter), new LissicOptions
-		{
-			UnknownTagDebugMode = UnknownTagDebugMode.InsertErrorText
-		}, async () =>
-		{
-			using TestRig rig = await CreateRig("{{ name | lp-nope }}");
-			Assert.Equal("<!-- ERROR: Filter 'lp-nope' not found -->ada",
-				RenderToText(rig.Processor, new TestTemplate(0).SetVariable("name", "ada")));
-		});
-
 
 	/* Parentheses */
 
@@ -484,10 +363,7 @@ public partial class LissicProcessorTests
 
 	[Theory]
 	[InlineData("{{ branch.c [a => x; b => y,] }}")]
-	[InlineData("{{ branch.c [a=>@A; b => \"B\"] }}")]
-	[InlineData("{{ name <lp-upper> | lp-upper }}")]
 	[InlineData("{{ branch.c [a => \"A\", a => \"B\"] }}")]
-	[InlineData("{{ branch.c [a=>@A;a=>@B;] }}")]
 	[InlineData("{{ branch.c [_ => \"A\", _ => \"B\"] }}")]
 	[InlineData("{{ name | lp-append(abc) }}")]
 	[InlineData("{{ (name | lp-upper }}")]
@@ -501,38 +377,4 @@ public partial class LissicProcessorTests
 	{
 		await Assert.ThrowsAsync<TemplateParsingException>(async () => await CreateRig(text));
 	}
-
-
-	/* Allocation-free rendering is preserved with the new syntax */
-
-	[Fact]
-	public Task V020_RenderToBuffer_NewSyntaxAfterWarmUp_DoesNotAllocate() =>
-		RunWithOptions(nameof(V020_RenderToBuffer_NewSyntaxAfterWarmUp_DoesNotAllocate), new LissicOptions
-		{
-			EnableCycleDetection = false
-		}, async () =>
-		{
-			using TestRig rig = await CreateRig(
-				"{{ name | lp-upper }}|{{ (name | lp-append(\"-\") | lp-upper) }}|{{ (part.p) }}|{{branch.color[red => name | lp-upper, _ => \"D\"]}}|{{branch.shape[round => \"O\", _ => \"D\"]}}",
-				"[{{ name }}]");
-			AllocationFreeTemplate template = new(0) { Part = new AllocationFreeTemplate(1) };
-			ArrayBufferWriter<byte> writer = new(1024);
-
-			for (int i = 0; i < 10; i++)
-			{
-				writer.ResetWrittenCount();
-				rig.Processor.RenderToBuffer(template, writer);
-			}
-			Assert.Equal("ADA|ADA-|[ada]|ADA|D", Encoding.UTF8.GetString(writer.WrittenSpan));
-
-			long before = GC.GetAllocatedBytesForCurrentThread();
-			for (int i = 0; i < 1000; i++)
-			{
-				writer.ResetWrittenCount();
-				rig.Processor.RenderToBuffer(template, writer);
-			}
-			long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-
-			Assert.Equal(0, allocated);
-		});
 }

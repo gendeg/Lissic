@@ -213,7 +213,7 @@ public partial class ImportedPackageTests
     [TemplatePath("../../Templates/header.html")]
     public partial class TestOutsideDirectory {}
 
-    [TemplateText("Hello, {{ name <upper> }}!")]
+    [TemplateText("Hello, {{ name | upper }}!")]
     public partial class TestFilterTemplate {}
 
     [FormattedVariable<DateFormatter>("date", ["yyyy-MM-dd"])]
@@ -243,7 +243,7 @@ public partial class ImportedPackageTests
     <li>
       <h2>{{ name }}</h2>
            Only {{ price }}
-           {{ description <truncate(15)> }}
+           {{ description | truncate(15) }}
     </li>
 """)]
     public partial class BenchInner {}

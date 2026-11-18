@@ -2,7 +2,7 @@ using Lissic.Parsing;
 
 namespace Lissic.Tests.Parsing;
 
-// Tests for LissicParser.FindOptionEnd, which finds the delimiter (',', ']' or ';') that ends a
+// Tests for LissicParser.FindOptionEnd, which finds the delimiter (',' or ']') that ends a
 // branch option, skipping anything inside quotes or parentheses.
 //
 // Return values:
@@ -19,7 +19,7 @@ public class FindOptionEndTests
         Assert.StartsWith(expectedPrefix, input);
         int end = LissicParser.FindOptionEnd(input, 0);
         Assert.Equal(expectedPrefix.Length, end);
-        Assert.Contains(input[end], ",];");
+        Assert.Contains(input[end], ",]");
     }
 
 
@@ -28,21 +28,12 @@ public class FindOptionEndTests
     [Theory]
     [InlineData("x, b => y]", "x")]
     [InlineData("x]", "x")]
-    [InlineData("x; b=>y;]", "x")]
     [InlineData(" x , b => y]", " x ")]
     [InlineData("part.p, b => y]", "part.p")]
     [InlineData("loop.items?]", "loop.items?")]
     [InlineData(", b => y]", "")]
     [InlineData("]", "")]
-    [InlineData(";", "")]
     public static void FindsFirstDelimiter(string input, string expectedPrefix)
-        => AssertEndsAfter(input, expectedPrefix);
-
-    [Theory]
-    [InlineData("x; y, z]", "x")]
-    [InlineData("x, y; z]", "x")]
-    [InlineData("x] }} a; b, c", "x")]
-    public static void StopsAtTheEarliestOfSeveralDelimiters(string input, string expectedPrefix)
         => AssertEndsAfter(input, expectedPrefix);
 
     [Theory]
@@ -57,12 +48,8 @@ public class FindOptionEndTests
     [Theory]
     [InlineData("name | f(\"a,b\"), c => d]", "name | f(\"a,b\")")]
     [InlineData("name | f(\"a]b\")]", "name | f(\"a]b\")")]
-    [InlineData("name | f(\"a;b\");", "name | f(\"a;b\")")]
     [InlineData("name | f('a,b'), c => d]", "name | f('a,b')")]
     [InlineData("name | f('a]b')]", "name | f('a]b')")]
-    [InlineData("name | f('a;b');", "name | f('a;b')")]
-    [InlineData("name | f(\";\")]", "name | f(\";\")")]
-    [InlineData("name | f(\",\", \"]\", \";\")]", "name | f(\",\", \"]\", \";\")")]
     public static void DelimitersInsideQuotesAreSkipped(string input, string expectedPrefix)
         => AssertEndsAfter(input, expectedPrefix);
 
@@ -86,7 +73,6 @@ public class FindOptionEndTests
     [InlineData("name | f(''), b => y]", "name | f('')")]
     [InlineData("name | f(\"\", \",\"), b => y]", "name | f(\"\", \",\")")]
     [InlineData("name | f('', ','), b => y]", "name | f('', ',')")]
-    [InlineData("name | f(\"\";\"\"), b => y]", "name | f(\"\";\"\")")]
     public static void EmptyQuotes(string input, string expectedPrefix)
         => AssertEndsAfter(input, expectedPrefix);
 
@@ -107,15 +93,12 @@ public class FindOptionEndTests
     // Several escapes in a row
     [InlineData("name | f(\"\"\"\"\"\"), b => y]", "name | f(\"\"\"\"\"\")")]
     [InlineData("name | f(\"a\"\"\"\"b\"), b => y]", "name | f(\"a\"\"\"\"b\")")]
-    // Escaped quote followed by a delimiter that is still inside the quotes
-    [InlineData("name | f(\"a\"\";\"\"b\"), b => y]", "name | f(\"a\"\";\"\"b\")")]
     public static void DoubledQuoteEscapesStayInsideQuotes(string input, string expectedPrefix)
         => AssertEndsAfter(input, expectedPrefix);
 
     [Theory]
     [InlineData("x \"a, b\", c => d]", "x \"a, b\"")]
     [InlineData("\"a, b\", c => d]", "\"a, b\"")]
-    [InlineData("'a; b'; c=>d;", "'a; b'")]
     public static void QuotesOutsideParenthesesAreSkipped(string input, string expectedPrefix)
         => AssertEndsAfter(input, expectedPrefix);
 
@@ -126,7 +109,6 @@ public class FindOptionEndTests
     [InlineData("(name | upper), b => y]", "(name | upper)")]
     [InlineData("(part.p)]", "(part.p)")]
     [InlineData("name | slice(5, 30), b => y]", "name | slice(5, 30)")]
-    [InlineData("name | f(a; b);", "name | f(a; b)")]
     [InlineData("name | f(])]", "name | f(])")]
     [InlineData("name | f( ), b => y]", "name | f( )")]
     public static void DelimitersInsideParenthesesAreSkipped(string input, string expectedPrefix)
