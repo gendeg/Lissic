@@ -228,6 +228,56 @@ public partial class WelcomeMessage { }
         Assert.Contains("WelcomeMessage", diagnostic.GetMessage());
     }
 
+    // Whether empty tags are allowed is undecided, so only the generator crash is checked
+    [Theory]
+    [InlineData(@"{{}}")]
+    [InlineData(@"{{ }}")]
+    [InlineData(@"{{ () }}")]
+    [InlineData(@"{{ branch.c [a => (), b => y] }}")]
+    public void EmptyTagsAndParentheses_DoNotCrashGenerator(string template)
+    {
+        Assert.Null(RunTemplate(template).Exception);
+    }
+
+    [Theory]
+    [InlineData(@"{{ Name | known( }}")]
+    [InlineData(@"{{Name|known(}}")]
+    [InlineData(@"{{Name|known(""a|""}}")]
+    [InlineData(@"{{Name|known('|'}}")]
+    public void FilterArgsCutOffAtEndOfTag_ReportErrorInsteadOfCrashing(string template)
+    {
+        GeneratorRunResult result = RunTemplate(template);
+
+        Assert.Null(result.Exception);
+        Assert.Single(result.Diagnostics, d => d.Id == "LISSIC005");
+    }
+
+    [Theory]
+    [InlineData(@"{{ branch.c [a => (Name) , b => (part.p) ] }}")]
+    [InlineData(@"{{ branch.c [a => (Name | known) , _ => (loop.l) ] }}")]
+    [InlineData(@"{{ branch.c [a => (""text"") , _ => ('other')] }}")]
+    public void ParenthesizedActionsAndLiterals_ReportNoDiagnostics(string template)
+    {
+        Assert.Empty(RunTemplate(template).Diagnostics);
+    }
+
+    // A literal mis-parsed as a variable produces no generator diagnostic, only uncompilable generated code
+    [Theory]
+    [InlineData(@"{{ branch.c [a => ""text"", _ => 'other'] }}")]
+    [InlineData(@"{{ branch.c [a => (""text""), _ => ('other')] }}")]
+    [InlineData(@"{{ branch.c [a => (""Hi {{ Name }}""), _ => (""""), ] }}")]
+    [InlineData(@"{{ branch.c [a => (""don't get confused ,""), b => (part.p)] }}")]
+    public void ParenthesizedLiterals_GeneratedCodeCompiles(string template)
+    {
+        Diagnostic[] errors = SnapshotRunner.GetCompilationErrors($$$"""
+{{{TemplateHeader}}}
+[TemplateText(@"{{{Escape(template)}}}")]
+public partial class WelcomeMessage { }
+""");
+
+        Assert.Empty(errors);
+    }
+
     [Theory]
     [InlineData(@"{{ branch.c [a => x] }}<script>f(a, b => b)</script>")]
     [InlineData(@"{{ branch.c [a => ""x""] }} a, b => c")]

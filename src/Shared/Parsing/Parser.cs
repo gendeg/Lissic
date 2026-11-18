@@ -375,6 +375,18 @@ internal static class LissicParser
         if (options[s.pos] == ',' || options[s.pos] == ']')
             throw new TemplateParsingException($"Missing value for branch option '{keyValue}', for branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}");
 
+        bool parenLiteral = false;
+        if (options[s.pos] == '(')
+        {
+            int next = s.pos + 1;
+            while (char.IsWhiteSpace(options[next])) next++;
+            if (options[next] == '"' || options[next] == '\'')
+            {
+                parenLiteral = true;
+                s.pos = next;
+            }
+        }
+
         // Literal text branch value
         if (options[s.pos] == '"' || options[s.pos] == '\'')
         {
@@ -386,6 +398,14 @@ internal static class LissicParser
             int literalStartPos = parseIdx + s.pos;
             string literalText = ParseBranchLiteral(options, ref s, options[s.pos - 1], templateName, parseIdx);
             s.branchOptions[keyValue] = Parse(literalText, templateName, isSourceGen, deprecationLog, literalStartPos);
+
+            if (parenLiteral)
+            {
+                while (char.IsWhiteSpace(options[s.pos])) s.pos++;
+                if (options[s.pos] != ')')
+                    throw new TemplateParsingException($"Expected ')' after literal text in branch '{s.keyName}', in template: {templateName.ToString()}, near position: {parseIdx + s.pos}.");
+                s.pos++;
+            }
 
             while (char.IsWhiteSpace(options[s.pos])) s.pos++;
             if (options[s.pos] == ',')
@@ -467,10 +487,6 @@ internal static class LissicParser
             if (pos < text.Length && text[pos] == '(')
             {
                 pos++;
-                int pipe = text[pos..].IndexOf('|');
-                if (pipe == -1 && text[pos..].TrimEnd()[^1] != ')')
-                    throw Error("is missing a closing ')'.", nameStart, variableName.ToString(), templateName.ToString());
-
                 args = ParseFilterArgs(text, ref pos, Error, variableName, templateName);
             }
             filters.Add(new FilterCall(name, args));
@@ -569,7 +585,7 @@ internal static class LissicParser
                     throw error($"has an argument with an unclosed {quote} quote.", pos, variableName.ToString(), templateName.ToString());
 
                 // Handle escape sequence
-                while(text[pos + length + 2] == quote)
+                while(pos + length + 2 < text.Length && text[pos + length + 2] == quote)
                 {
                     quotedArg.Append(text.Slice(pos + 1, length + 1).ToString());
                     pos += length + 2;
@@ -647,7 +663,7 @@ internal static class LissicParser
                 if (arg.Length == 0)
                     throw error("has an empty argument.", start, variableName.ToString(), templateName.ToString());
                 if (!long.TryParse(arg, out _) && !decimal.TryParse(arg, out _))
-                    deprecationLog?.Add(("Unquoted string used in filter arguement", templateName.ToString()));
+                    deprecationLog?.Add(("Unquoted string used in filter argument", templateName.ToString()));
             }
             args.Add(arg);
 
@@ -666,6 +682,10 @@ internal static class LissicParser
 
     internal static ITemplateNode ParseTag(ReadOnlySpan<char> tag, ReadOnlySpan<char> templateName, int parseIdx, List<(string, string)>? deprecationLog)
     {
+        tag = tag.Trim();
+        if (tag.IsEmpty)
+            throw new TemplateParsingException($"Tag is empty in template: {templateName.ToString()}, near position: {parseIdx}.");
+
         if (tag[0] == '(' && tag[^1] == ')')
             return ParseTag(tag[1..^1], templateName, parseIdx, deprecationLog);
         if (tag[0] == '(')

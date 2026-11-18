@@ -144,13 +144,13 @@ public class FindTagEndTests
     [InlineData("{{ a }}", 5, 0)]
     public void StartsSearchingAtStart(string input, int start, int expected)
     {
-        Assert.Equal(expected, LissicParser.FindTagEnd(input[start..]));
+        Assert.Equal(expected, LissicParser.FindTagEnd(input.AsSpan()[start..]));
     }
 
     [Fact]
     public void ClosingBracesBeforeStart_AreIgnored()
     {
-        Assert.Equal(-1, LissicParser.FindTagEnd("{{ a }} b"[7..]));
+        Assert.Equal(-1, LissicParser.FindTagEnd("{{ a }} b".AsSpan()[7..]));
     }
 
     [Theory]
@@ -159,7 +159,7 @@ public class FindTagEndTests
     [InlineData("a }}", 3)]
     public void StartAtOrNearEnd_ReturnsNotFound(string input, int start)
     {
-        Assert.Equal(-1, LissicParser.FindTagEnd(input[start..]));
+        Assert.Equal(-1, LissicParser.FindTagEnd(input.AsSpan()[start..]));
     }
 
 
