@@ -1,4 +1,4 @@
-#### Version 0.2.0 (2026-Nov-__)
+#### Version 0.2.0 (2026-Nov-17)
 
 - BREAKING: Multiple changes to Lissic syntax, old syntax is deprecated and will be removed in 0.3.0
   - Branches now use `,` delimiter (instead of `;`)

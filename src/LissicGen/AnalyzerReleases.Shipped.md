@@ -12,3 +12,12 @@ LISSIC005  |  Design  |  Error   | LISSIC005_InvalidTemplate, [Documentation](ht
 LISSIC006  |  Design  |  Warning | LISSIC006_UnknownFilter, [Documentation](https://github.com/gendeg/Lissic/Docs/ExceptionsAndDebugging.md)
 LISSIC007  |  Usage   |  Error   | LISSIC007_MissingTemplateFile, [Documentation](https://github.com/gendeg/Lissic/Docs/ExceptionsAndDebugging.md)
 LISSIC008  |  Usage   |  Info    | LISSIC008_EmptyTemplateFile, [Documentation](https://github.com/gendeg/Lissic/Docs/ExceptionsAndDebugging.md)
+
+
+## Release 0.2.0
+
+### New Rules
+
+Rule ID    | Category | Severity | Notes
+-----------|----------|----------|--------------------
+LISSIC009  |  Design  |  Warning | LISSIC009_DeprecatedSyntax, [Documentation](https://github.com/gendeg/Lissic/Docs/ExceptionsAndDebugging.md)
