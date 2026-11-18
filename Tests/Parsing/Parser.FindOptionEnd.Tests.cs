@@ -204,7 +204,7 @@ public class FindOptionEndTests
 
 // The same edge cases checked through LissicParser.Parse, so they stay covered if FindOptionEnd is
 // renamed, inlined, or its return codes change.
-public class BranchOptionEndV020Tests
+public class BranchOptionEndTests
 {
     private static BranchNode ParseSingleBranch(string template)
         => Assert.IsType<BranchNode>(Assert.Single(LissicParser.Parse(template, "TestTemplate")));
