@@ -366,7 +366,7 @@ public class LissicTemplateGenerator : IIncrementalGenerator
 
         try
         {
-            nodes = LissicParser.Parse(record.Content, record.TemplateRefName, isSourceGen: true);
+            nodes = LissicParser.Parse(record.Content, record.TemplateRefName);
         }
         catch (TemplateParsingException ex)
         {
