@@ -767,7 +767,7 @@ public class ParseBranchTests
     }
 
 
-    /* Branches as direct actions of other branches 
+    /* Branches as direct actions of other branches */
 
     [Theory]
     [InlineData("{{branch.outer[a => branch.inner [x => \"X\", y => name], b => \"B\"]}}")]

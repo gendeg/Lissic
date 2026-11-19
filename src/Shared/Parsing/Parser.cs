@@ -333,23 +333,30 @@ internal static class LissicParser
 
     internal static int FindOptionEnd(ReadOnlySpan<char> options, int start)
     {
-        int depth = 0;
+        int parens = 0;
+        int brackets = 0;
         int idx = start;
         while (idx < options.Length)
         {
             switch (options[idx])
             {
-                case ',' or ']' when depth == 0:
+                case ',' or ']' when parens == 0 && brackets == 0:
                     return idx;
                 case '"' or '\'':
                     idx = SkipQuoted(options, idx);
                     continue;
                 case '(':
-                    depth++;
+                    parens++;
                     break;
                 case ')':
-                    if (--depth < 0)
+                    if (--parens < 0)
                         return -2;
+                    break;
+                case '[' when parens == 0:
+                    brackets++;
+                    break;
+                case ']' when parens == 0:
+                    brackets--;
                     break;
             }
             idx++;
