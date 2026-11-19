@@ -58,4 +58,10 @@ internal static class Diagnostics
         "Deprecated syntax",
         "Syntax '{0}' in template '{1}' is deprecated",
         "Design", DiagnosticSeverity.Warning, isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidFilterName = new(
+        "LISSIC010",
+        "Invalid filter name",
+        "Filter name '{0}' is invalid",
+        "Design", DiagnosticSeverity.Error, isEnabledByDefault: true);
 }

@@ -30,9 +30,9 @@ public class LissicTemplateGenerator : IIncrementalGenerator
                 predicate: (_, _) => true,
                 transform: (ctx, _) => {
                     string? name = ctx.Attributes[0].ConstructorArguments[0].Value?.ToString();
-                    if (ctx.TargetSymbol is not INamedTypeSymbol namedTypeSymbol || string.IsNullOrEmpty(name))
+                    if (ctx.TargetSymbol is not INamedTypeSymbol namedTypeSymbol)
                         return (FilterRecord?)null;
-                    return new FilterRecord(namedTypeSymbol, name!);
+                    return new FilterRecord(namedTypeSymbol, name ?? "");
                 }
             );
 
@@ -218,6 +218,8 @@ public class LissicTemplateGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(Diagnostics.FilterIsNotAFactory, location, filter.FilterType.Name));
             else if (!IsAccessible(filter.FilterType))
                 context.ReportDiagnostic(Diagnostic.Create(Diagnostics.FilterIsNotAccessible, location, filter.FilterType.Name));
+            else if (LissicParser.IsValidName(filter.Name) is false)
+                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.InvalidFilterName, location, filter.Name));
             else if (valid.Any(other => string.Equals(other.Name, filter.Name, StringComparison.OrdinalIgnoreCase)))
                 context.ReportDiagnostic(Diagnostic.Create(Diagnostics.DuplicateFilterName, location, filter.Name, filter.FilterType.Name));
             else

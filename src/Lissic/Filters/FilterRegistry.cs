@@ -1,3 +1,4 @@
+using Lissic.Parsing;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
@@ -13,6 +14,12 @@ public static class FilterRegistry
 
     public static void Register<T>(string name) where T : IFilterFactory
     {
+        if (name == null)
+            throw new ArgumentNullException(nameof(name));
+        else if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Name cannot be empty", nameof(name));
+        else if (!LissicParser.IsValidName(name))
+            throw new ArgumentException("Invalid name", nameof(name));
         factories[name] = static args => T.Create(args);
     }
 

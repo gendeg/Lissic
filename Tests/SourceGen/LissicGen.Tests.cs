@@ -360,6 +360,105 @@ public class Outer
         Assert.Equal(["LISSIC004"], ids);
     }
 
+    // FilterRegistry.Register throws for these at module load, so the generator must not emit them
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("html-safe")]
+    [InlineData("1st")]
+    [InlineData("has space")]
+    [InlineData(" padded ")]
+    [InlineData("a.b")]
+    [InlineData("a(b)")]
+    [InlineData("a|b")]
+    [InlineData("name?")]
+    public void InvalidFilterName_ReportsErrorAndIsNotRegistered(string name)
+    {
+        GeneratorDriver driver = SnapshotRunner.Run($$"""
+using Lissic;
+using System;
+using System.Buffers;
+
+namespace Tests;
+
+[FilterName("{{name}}")]
+public class BadNameFilter : IFilterFactory
+{
+    public static ITemplateFilter Create(ReadOnlySpan<string> args) => new BadNameFilter();
+    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+}
+""");
+
+        GeneratorRunResult result = driver.GetRunResult().Results[0];
+        Diagnostic diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("LISSIC010", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
+        Assert.Contains($"'{name}'", diagnostic.GetMessage());
+        string registration = result.GeneratedSources.Single(source => source.HintName == "Lissic.Filters.g.cs").SourceText.ToString();
+        Assert.DoesNotContain("BadNameFilter", registration);
+    }
+
+    [Fact]
+    public void InvalidFilterName_DoesNotBlockValidFilters()
+    {
+        GeneratorDriver driver = SnapshotRunner.Run("""
+using Lissic;
+using System;
+using System.Buffers;
+
+namespace Tests;
+
+[FilterName("html-safe")]
+public class BadNameFilter : IFilterFactory
+{
+    public static ITemplateFilter Create(ReadOnlySpan<string> args) => new BadNameFilter();
+    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+}
+
+[FilterName("html_safe")]
+public class GoodNameFilter : IFilterFactory
+{
+    public static ITemplateFilter Create(ReadOnlySpan<string> args) => new GoodNameFilter();
+    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+}
+""");
+
+        GeneratorRunResult result = driver.GetRunResult().Results[0];
+        Assert.Equal(["LISSIC010"], result.Diagnostics.Select(d => d.Id));
+        string registration = result.GeneratedSources.Single(source => source.HintName == "Lissic.Filters.g.cs").SourceText.ToString();
+        Assert.Contains("Register<global::Tests.GoodNameFilter>(\"html_safe\");", registration);
+        Assert.DoesNotContain("BadNameFilter", registration);
+    }
+
+    // Invalid names never reach the duplicate check, so each type gets LISSIC010 rather than one getting LISSIC003
+    [Fact]
+    public void InvalidFilterName_IsCheckedBeforeDuplicates()
+    {
+        string[] ids = DiagnosticIds("""
+using Lissic;
+using System;
+using System.Buffers;
+
+namespace Tests;
+
+[FilterName("bad-name")]
+public class AFilter : IFilterFactory
+{
+    public static ITemplateFilter Create(ReadOnlySpan<string> args) => new AFilter();
+    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+}
+
+[FilterName("bad-name")]
+public class BFilter : IFilterFactory
+{
+    public static ITemplateFilter Create(ReadOnlySpan<string> args) => new BFilter();
+    public void Apply(ReadOnlySpan<byte> input, IBufferWriter<byte> output) { }
+}
+""");
+
+        Assert.Equal(["LISSIC010", "LISSIC010"], ids);
+    }
+
     [Fact]
     public void ValidTemplateAndFilters_ReportNoDiagnostics()
     {
