@@ -12,10 +12,10 @@ public class LissicProcessorTests
 {
 	static LissicProcessorTests()
 	{
-		FilterRegistry.Register<UpperTestFilter>("lp-upper");
-		FilterRegistry.Register<AppendTestFilter>("lp-append");
-		FilterRegistry.Register<DefaultTestFilter>("lp-default");
-		FilterRegistry.Register<FailingTestFilter>("lp-fail");
+		FilterRegistry.Register<UpperTestFilter>("lp_upper");
+		FilterRegistry.Register<AppendTestFilter>("lp_append");
+		FilterRegistry.Register<DefaultTestFilter>("lp_default");
+		FilterRegistry.Register<FailingTestFilter>("lp_fail");
 	}
 
 	[Fact]
@@ -152,7 +152,7 @@ public class LissicProcessorTests
 	[InlineData(5)]
 	public async Task RenderToString_AppliesFilterChainInOrder(int count)
 	{
-		string chain = string.Join(" | ", Enumerable.Range(1, count).Select(i => $"lp-append({i})"));
+		string chain = string.Join(" | ", Enumerable.Range(1, count).Select(i => $"lp_append({i})"));
 		using TestRig rig = await CreateRig($"{{{{ name | {chain} }}}}");
 
 		string result = rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada"));
@@ -163,7 +163,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_SameVariableWithAndWithoutFilters()
 	{
-		using TestRig rig = await CreateRig("{{ name }} {{ name | lp-upper }} {{ name }}");
+		using TestRig rig = await CreateRig("{{ name }} {{ name | lp_upper }} {{ name }}");
 
 		Assert.Equal("ada ADA ada", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
 	}
@@ -171,7 +171,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_UnsetFilteredVariable_SkipsFiltersSilently()
 	{
-		using TestRig rig = await CreateRig("[{{ name | lp-append(\"!\") }}][{{ other? | lp-append(\"!\") }}]");
+		using TestRig rig = await CreateRig("[{{ name | lp_append(\"!\") }}][{{ other? | lp_append(\"!\") }}]");
 
 		Assert.Equal("[][]", rig.Processor.RenderToString(new TestTemplate(0)));
 	}
@@ -179,7 +179,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_ZeroLengthTextValue_StillRunsFilters()
 	{
-		using TestRig rig = await CreateRig("{{ name | lp-default(\"n/a\") }}");
+		using TestRig rig = await CreateRig("{{ name | lp_default(\"n/a\") }}");
 
 		Assert.Equal("n/a", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "")));
 	}
@@ -187,7 +187,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_UnknownFilterPassesValueThrough()
 	{
-		using TestRig rig = await CreateRig("{{ name | lp-upper | lp-not-registered }}");
+		using TestRig rig = await CreateRig("{{ name | lp_upper | lp_not_registered }}");
 
 		Assert.Equal("ADA", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
 	}
@@ -195,7 +195,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_FiltersApplyInPartsAndLoops()
 	{
-		using TestRig rig = await CreateRig("{{part.header}}|{{loop.items}}", "[{{ title | lp-upper }}]");
+		using TestRig rig = await CreateRig("{{part.header}}|{{loop.items}}", "[{{ title | lp_upper }}]");
 		TestTemplate template = new TestTemplate(0)
 			.SetPart("header", new TestTemplate(1).SetVariable("title", "head"))
 			.SetLoop("items", new TestTemplate(1).SetVariable("title", "one"), new TestTemplate(1).SetVariable("title", "two"));
@@ -207,9 +207,9 @@ public class LissicProcessorTests
 	public async Task Initialize_FilterFactoryThatThrows_FailsWithFilterAndTemplateNames()
 	{
 		TemplateParsingException exception = await Assert.ThrowsAsync<TemplateParsingException>(
-			() => CreateRig("{{ name | lp-fail(\"x\") }}"));
+			() => CreateRig("{{ name | lp_fail(\"x\") }}"));
 
-		Assert.Contains("lp-fail", exception.Message);
+		Assert.Contains("lp_fail", exception.Message);
 		Assert.Contains("template-0", exception.Message);
 		Assert.Contains("bad filter argument", exception.Message);
 	}
@@ -217,7 +217,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_LargeFiltersAreRendered()
 	{
-		using TestRig rig = await CreateRig("{{ name | lp-append(1) | lp-append(2) | lp-append(3) }}");
+		using TestRig rig = await CreateRig("{{ name | lp_append(1) | lp_append(2) | lp_append(3) }}");
 		string value = new('x', 300_000);
 		TestTemplate template = new TestTemplate(0).SetVariable("name", value);
 
@@ -234,7 +234,7 @@ public class LissicProcessorTests
 		}, async () =>
 		{
 			using TestRig rig = await CreateRig(
-				"{{ name }}|{{ name | lp-upper }}|{{ name | lp-append(\"-\") | lp-upper | lp-append(\"!\") }}|{{part.p}}|{{loop.items}}|{{branch.color[red=>name | lp-upper]}}|{{branch.shape[round => \"O\", _ => \"D\"]}}",
+				"{{ name }}|{{ name | lp_upper }}|{{ name | lp_append(\"-\") | lp_upper | lp_append(\"!\") }}|{{part.p}}|{{loop.items}}|{{branch.color[red=>name | lp_upper]}}|{{branch.shape[round => \"O\", _ => \"D\"]}}",
 				"[{{ name }}]");
 			AllocationFreeTemplate template = new(0)
 			{
@@ -430,7 +430,7 @@ public class LissicProcessorTests
 			OutputSizeThreshold = 12
 		}, async () =>
 		{
-			using TestRig rig = await CreateRig("A{{plain}}/{{ value | lp-append(\"!\") }}Z");
+			using TestRig rig = await CreateRig("A{{plain}}/{{ value | lp_append(\"!\") }}Z");
 			TestTemplate template = new TestTemplate(0).SetVariable("plain", "世界").SetVariable("value", "é");
 			ArrayBufferWriter<byte> writer = new();
 			const string expected = "A世界/é!Z";
@@ -448,7 +448,7 @@ public class LissicProcessorTests
 			OutputSizeThreshold = 11
 		}, async () =>
 		{
-			using TestRig rig = await CreateRig("A{{plain}}/{{ value | lp-append(\"!\") }}Z");
+			using TestRig rig = await CreateRig("A{{plain}}/{{ value | lp_append(\"!\") }}Z");
 			TestTemplate template = new TestTemplate(0).SetVariable("plain", "世界").SetVariable("value", "é");
 			ArrayBufferWriter<byte> writer = new();
 			const string expected = "A世界/é!Z";
@@ -602,15 +602,15 @@ public class LissicProcessorTests
 			UnknownTagDebugMode = UnknownTagDebugMode.InsertErrorText
 		}, async () =>
 		{
-			using TestRig unsetRig = await CreateRig("[{{ name | lp-upper }}]");
+			using TestRig unsetRig = await CreateRig("[{{ name | lp_upper }}]");
 			Assert.Equal("[<!-- ERROR: Missing value for variable 'name' -->]",
 				RenderToText(unsetRig.Processor, new TestTemplate(0)));
 
-			using TestRig optionalRig = await CreateRig("[{{ name? | lp-upper }}][{{ other? }}]");
+			using TestRig optionalRig = await CreateRig("[{{ name? | lp_upper }}][{{ other? }}]");
 			Assert.Equal("[][]", RenderToText(optionalRig.Processor, new TestTemplate(0)));
 
-			using TestRig unknownRig = await CreateRig("{{ name | lp-nope }}");
-			Assert.Equal("<!-- ERROR: Filter 'lp-nope' not found -->ada",
+			using TestRig unknownRig = await CreateRig("{{ name | lp_nope }}");
+			Assert.Equal("<!-- ERROR: Filter 'lp_nope' not found -->ada",
 				RenderToText(unknownRig.Processor, new TestTemplate(0).SetVariable("name", "ada")));
 		});
 
@@ -621,18 +621,18 @@ public class LissicProcessorTests
 			UnknownTagDebugMode = UnknownTagDebugMode.ThrowException
 		}, async () =>
 		{
-			using TestRig unsetRig = await CreateRig("{{ name | lp-upper }}");
+			using TestRig unsetRig = await CreateRig("{{ name | lp_upper }}");
 			TemplateRenderException unsetException = Assert.Throws<TemplateRenderException>(
 				() => RenderToText(unsetRig.Processor, new TestTemplate(0)));
 			Assert.Contains("Missing value for variable 'name'", unsetException.Message);
 
-			using TestRig optionalRig = await CreateRig("{{ name? | lp-upper }}");
+			using TestRig optionalRig = await CreateRig("{{ name? | lp_upper }}");
 			Assert.Equal(string.Empty, RenderToText(optionalRig.Processor, new TestTemplate(0)));
 
-			using TestRig unknownRig = await CreateRig("{{ name | lp-nope }}");
+			using TestRig unknownRig = await CreateRig("{{ name | lp_nope }}");
 			TemplateRenderException unknownException = Assert.Throws<TemplateRenderException>(
 				() => RenderToText(unknownRig.Processor, new TestTemplate(0).SetVariable("name", "ada")));
-			Assert.Contains("Filter 'lp-nope' not found", unknownException.Message);
+			Assert.Contains("Filter 'lp_nope' not found", unknownException.Message);
 		});
 
 
@@ -756,7 +756,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_DefaultOptionCanBeACommand()
 	{
-		using TestRig rig = await CreateRig("{{branch.color[red => \"R\", _ => (name | lp-upper)]}}|{{branch.shape[round => \"O\", _ => part.p]}}", "[part]");
+		using TestRig rig = await CreateRig("{{branch.color[red => \"R\", _ => (name | lp_upper)]}}|{{branch.shape[round => \"O\", _ => part.p]}}", "[part]");
 		TestTemplate template = new TestTemplate(0)
 			.SetBranchKey("color", "green")
 			.SetBranchKey("shape", "square")
@@ -876,7 +876,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_BranchAsDirectAction_WithFiltersAndNoInnerDefault()
 	{
-		using TestRig rig = await CreateRig("[{{ branch.outer [a => branch.inner [x => name | lp-append(\", \") | lp-upper, y => (name | lp-append(\"!\"))], b => \"B\"] }}]");
+		using TestRig rig = await CreateRig("[{{ branch.outer [a => branch.inner [x => name | lp_append(\", \") | lp_upper, y => (name | lp_append(\"!\"))], b => \"B\"] }}]");
 
 		Assert.Equal("[ADA, ]", rig.Processor.RenderToString(new TestTemplate(0).SetBranchKey("outer", "a").SetBranchKey("inner", "x").SetVariable("name", "ada")));
 		Assert.Equal("[ada!]", rig.Processor.RenderToString(new TestTemplate(0).SetBranchKey("outer", "a").SetBranchKey("inner", "y").SetVariable("name", "ada")));
@@ -911,9 +911,9 @@ public class LissicProcessorTests
 	/* Branches: filtered actions */
 
 	[Theory]
-	[InlineData("{{ branch.status [member => name | lp-upper | lp-append(\", member\"), _ => \"not a member\" ] }}")]
-	[InlineData("{{ branch.status [member => (name | lp-upper | lp-append(\", member\")), _ => \"not a member\" ] }}")]
-	[InlineData("{{ branch.status [member => name|lp-upper|lp-append(', member'),_=>'not a member'] }}")]
+	[InlineData("{{ branch.status [member => name | lp_upper | lp_append(\", member\"), _ => \"not a member\" ] }}")]
+	[InlineData("{{ branch.status [member => (name | lp_upper | lp_append(\", member\")), _ => \"not a member\" ] }}")]
+	[InlineData("{{ branch.status [member => name|lp_upper|lp_append(', member'),_=>'not a member'] }}")]
 	public async Task RenderToString_FilteredBranchActions(string text)
 	{
 		using TestRig rig = await CreateRig(text);
@@ -925,7 +925,7 @@ public class LissicProcessorTests
 	[Fact]
 	public async Task RenderToString_FiltersApplyInsideDefaultLiteral()
 	{
-		using TestRig rig = await CreateRig("{{ branch.s [a => \"A\", _ => '{{ name | lp-upper }}'] }}");
+		using TestRig rig = await CreateRig("{{ branch.s [a => \"A\", _ => '{{ name | lp_upper }}'] }}");
 
 		Assert.Equal("ADA", rig.Processor.RenderToString(new TestTemplate(0).SetVariable("name", "ada")));
 	}
@@ -934,11 +934,11 @@ public class LissicProcessorTests
 	/* Filters: pipe syntax */
 
 	[Theory]
-	[InlineData("[{{ name | lp-upper }}]")]
-	[InlineData("[{{name|lp-upper}}]")]
-	[InlineData("[{{ name | LP-UPpER }}]")]
-	[InlineData("[{{ (name | lp-upper) }}]")]
-	[InlineData("[{{ name\n  | lp-upper\n}}]")]
+	[InlineData("[{{ name | lp_upper }}]")]
+	[InlineData("[{{name|lp_upper}}]")]
+	[InlineData("[{{ name | LP_UPpER }}]")]
+	[InlineData("[{{ (name | lp_upper) }}]")]
+	[InlineData("[{{ name\n  | lp_upper\n}}]")]
 	public async Task RenderToString_AppliesPipeFilter(string text)
 	{
 		using TestRig rig = await CreateRig(text);
@@ -947,16 +947,16 @@ public class LissicProcessorTests
 	}
 
 	[Theory]
-	[InlineData("{{ name | lp-append(\"x\") | lp-upper }}", "ADAX")]
-	[InlineData("{{ name | lp-upper | lp-append(\"x\") }}", "ADAx")]
-	[InlineData("{{ name | lp-append(-1.5) }}", "ada-1.5")]
-	[InlineData("{{ name | lp-append (\"!\") }}", "ada!")]
-	[InlineData("{{ name | lp-append( \"!\" ) }}", "ada!")]
-	[InlineData("{{ name | lp-append(\" the great\") }}", "ada the great")]
-	[InlineData("{{ name | lp-append(\"\"\"\") }}", "ada\"")]
-	[InlineData("{{ name | lp-append('''') }}", "ada'")]
-	[InlineData("{{ name | lp-append(\"say \"\"hi\"\"\") }}", "adasay \"hi\"")]
-	[InlineData("{{ name | lp-append(\"a, b | c) d\") }}", "adaa, b | c) d")]
+	[InlineData("{{ name | lp_append(\"x\") | lp_upper }}", "ADAX")]
+	[InlineData("{{ name | lp_upper | lp_append(\"x\") }}", "ADAx")]
+	[InlineData("{{ name | lp_append(-1.5) }}", "ada-1.5")]
+	[InlineData("{{ name | lp_append (\"!\") }}", "ada!")]
+	[InlineData("{{ name | lp_append( \"!\" ) }}", "ada!")]
+	[InlineData("{{ name | lp_append(\" the great\") }}", "ada the great")]
+	[InlineData("{{ name | lp_append(\"\"\"\") }}", "ada\"")]
+	[InlineData("{{ name | lp_append('''') }}", "ada'")]
+	[InlineData("{{ name | lp_append(\"say \"\"hi\"\"\") }}", "adasay \"hi\"")]
+	[InlineData("{{ name | lp_append(\"a, b | c) d\") }}", "adaa, b | c) d")]
 	public async Task RenderToString_PipeFilterChainsAndArgs(string text, string expected)
 	{
 		using TestRig rig = await CreateRig(text);
@@ -994,12 +994,12 @@ public class LissicProcessorTests
 	[InlineData("{{ branch.c [a => x; b => y,] }}")]
 	[InlineData("{{ branch.c [a => \"A\", a => \"B\"] }}")]
 	[InlineData("{{ branch.c [_ => \"A\", _ => \"B\"] }}")]
-	[InlineData("{{ name | lp-append(abc) }}")]
-	[InlineData("{{ (name | lp-upper }}")]
+	[InlineData("{{ name | lp_append(abc) }}")]
+	[InlineData("{{ (name | lp_upper }}")]
 	[InlineData("{{ branch.c [a => \"unclosed] }}")]
-	[InlineData("{{ (name) | lp-upper }}")]
-	[InlineData("{{ (name | lp-upper) | lp-upper }}")]
-	[InlineData("{{ branch.c [a => (name) | lp-upper] }}")]
+	[InlineData("{{ (name) | lp_upper }}")]
+	[InlineData("{{ (name | lp_upper) | lp_upper }}")]
+	[InlineData("{{ branch.c [a => (name) | lp_upper] }}")]
 	[InlineData("{{ branch.c [a => branch.d [x => \"X\", b => \"B\"] }}")]
 	[InlineData("{{ branch.c [a => branch.d, b => \"B\"] }}")]
 	public async Task Initialize_InvalidSyntaxThrows(string text)

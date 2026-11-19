@@ -9,7 +9,7 @@ public class TemplateCacheTests
 {
 	static TemplateCacheTests()
 	{
-		FilterRegistry.Register<NoOpFilter>("tc-noop");
+		FilterRegistry.Register<NoOpFilter>("tc_noop");
 	}
 
 	[Fact]
@@ -17,7 +17,7 @@ public class TemplateCacheTests
 	{
 		Lissic.Parsing.TemplateCache cache = new();
 
-		await cache.Initialize(new TestManifest(new TemplateEntry(TemplateKind.Literal, "a {{ name | tc-noop | tc-noop(1) }} b", "filtered")));
+		await cache.Initialize(new TestManifest(new TemplateEntry(TemplateKind.Literal, "a {{ name | tc_noop | tc_noop(1) }} b", "filtered")));
 
 		FilteredVariableNode node = Assert.IsType<FilteredVariableNode>(cache.Get(0)[1]);
 		Assert.Equal("name", node.Name);
@@ -42,7 +42,7 @@ public class TemplateCacheTests
 	{
 		Lissic.Parsing.TemplateCache cache = new();
 
-		await cache.Initialize(new TestManifest(new TemplateEntry(TemplateKind.Literal, "{{branch.color[red=>name | tc-noop]}}", "branch")));
+		await cache.Initialize(new TestManifest(new TemplateEntry(TemplateKind.Literal, "{{branch.color[red=>name | tc_noop]}}", "branch")));
 
 		BranchNode branch = Assert.IsType<BranchNode>(Assert.Single(cache.Get(0)));
 		ITemplateNode[] entry = branch.BranchEntries["red"];
@@ -54,7 +54,7 @@ public class TemplateCacheTests
 	{
 		Lissic.Parsing.TemplateCache cache = new();
 
-		await cache.Initialize(new TestManifest(new TemplateEntry(TemplateKind.Literal, "{{ name | tc-not-registered }}", "unknown")));
+		await cache.Initialize(new TestManifest(new TemplateEntry(TemplateKind.Literal, "{{ name | tc_not_registered }}", "unknown")));
 
 		FilteredVariableNode node = Assert.IsType<FilteredVariableNode>(Assert.Single(cache.Get(0)));
 		Assert.IsType<UnknownFilter>(Assert.Single(node.Filters));
@@ -70,7 +70,7 @@ public class TemplateCacheTests
 		Lissic.Parsing.TemplateCache cache = new();
 		await cache.Initialize(manifest);
 
-		await File.WriteAllTextAsync(filePath, "{{ name | tc-noop }}", TestContext.Current.CancellationToken);
+		await File.WriteAllTextAsync(filePath, "{{ name | tc_noop }}", TestContext.Current.CancellationToken);
 		cache.ReloadPathTemplates(manifest, TestContext.Current.CancellationToken);
 
 		Assert.IsType<FilteredVariableNode>(Assert.Single(cache.Get(0)));

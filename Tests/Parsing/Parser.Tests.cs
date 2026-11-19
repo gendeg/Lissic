@@ -51,7 +51,7 @@ public class ParseTemplateTests
     [Fact]
     public void ParseTag_VariableWithoutFilters_HasNoFilters()
     {
-        VariableNode variable = Assert.IsType<VariableNode>(LissicParser.ParseTag("name", "TestTemplate", 0));
+        VariableNode variable = Assert.IsType<VariableNode>(LissicParser.ParseTag("name", "TestTemplate", false, 0));
 
         Assert.Empty(variable.Filters);
     }
@@ -60,7 +60,7 @@ public class ParseTemplateTests
     public void ParseTag_FilterChain_KeepsOrderAndArgs()
     {
         VariableNode variable = Assert.IsType<VariableNode>(
-            LissicParser.ParseTag("name | lower(\"x\") | pad(\"42\", 'down') | upper()", "TestTemplate", 0));
+            LissicParser.ParseTag("name | lower(\"x\") | pad(\"42\", 'down') | upper()", "TestTemplate", false, 0));
 
         Assert.Collection(variable.Filters,
             f => { Assert.Equal("lower", f.Name); Assert.Equal(["x"], f.Args); },
@@ -71,7 +71,7 @@ public class ParseTemplateTests
     [Fact]
     public void ParseTag_OptionalVariableWithFilters()
     {
-        VariableNode variable = Assert.IsType<VariableNode>(LissicParser.ParseTag("city? | trim", "TestTemplate", 0));
+        VariableNode variable = Assert.IsType<VariableNode>(LissicParser.ParseTag("city? | trim", "TestTemplate", false, 0));
 
         Assert.Equal("city", variable.Name);
         Assert.False(variable.Required);
@@ -118,7 +118,7 @@ public class ParseTemplateTests
     [InlineData("forEach.name", typeof(LoopNode))]
     public void ParseTag_RecognizesAllCommandTypes(string command, Type expected)
     {
-        ITemplateNode node = LissicParser.ParseTag(command.AsSpan(), "TestTemplate", 0);
+        ITemplateNode node = LissicParser.ParseTag(command.AsSpan(), "TestTemplate", false, 0);
         Assert.IsType(expected, node);
         switch (node)
         {
@@ -137,7 +137,7 @@ public class ParseTemplateTests
     [Fact]
     public void ParseTag_TypeIsCaseInsensitive()
     {
-        ITemplateNode node = LissicParser.ParseTag("PART.name", "TestTemplate", 0);
+        ITemplateNode node = LissicParser.ParseTag("PART.name", "TestTemplate", false, 0);
         PartNode part = Assert.IsType<PartNode>(node);
         Assert.Equal("name", part.Name.ToString());
     }
@@ -145,7 +145,7 @@ public class ParseTemplateTests
     [Fact]
     public void ParseTag_TrimsWhitespaceAroundTypeAndValue_ButPreservesValueCase()
     {
-        ITemplateNode node = LissicParser.ParseTag("  part.Name  ", "TestTemplate", 0);
+        ITemplateNode node = LissicParser.ParseTag("  part.Name  ", "TestTemplate", false, 0);
         PartNode part = Assert.IsType<PartNode>(node);
         Assert.Equal("Name", part.Name.ToString());
     }
@@ -154,7 +154,7 @@ public class ParseTemplateTests
     public void ParseTag_UnknownType_ThrowsWithTypeInMessage()
     {
         TemplateParsingException ex = Assert.Throws<TemplateParsingException>(
-            () => LissicParser.ParseTag("bogus.name".AsSpan(), "TestTemplate", 0));
+            () => LissicParser.ParseTag("bogus.name".AsSpan(), "TestTemplate", false, 0));
         Assert.Contains("bogus", ex.Message);
     }
 
@@ -164,7 +164,7 @@ public class ParseTemplateTests
     [InlineData("loop.name?", typeof(LoopNode))]
     public void ParseTag_IgnoresQuestionMark(string command, Type expected)
     {
-        ITemplateNode node = LissicParser.ParseTag(command.AsSpan(), "TestTemplate", 0);
+        ITemplateNode node = LissicParser.ParseTag(command.AsSpan(), "TestTemplate", false, 0);
         Assert.IsType(expected, node);
         switch (node)
         {

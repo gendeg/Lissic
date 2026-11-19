@@ -16,7 +16,7 @@ public class FindTagEndTests
     private static void AssertEndsAfter(string input, string expectedPrefix)
     {
         Assert.StartsWith(expectedPrefix, input);
-        int end = LissicParser.FindTagEnd(input);
+        int end = LissicParser.FindTagEnd(input, 0);
         Assert.Equal(expectedPrefix.Length, end);
         Assert.Equal("}}", input.Substring(end, 2));
     }
@@ -138,19 +138,19 @@ public class FindTagEndTests
     /* Start position */
 
     [Theory]
-    [InlineData("{{ a }} {{ b }}", 2, 3)]
-    [InlineData("{{ a }} {{ b }}", 10, 3)]
-    [InlineData("text {{ name | f(\"}}\") }} more", 7, 16)]
-    [InlineData("{{ a }}", 5, 0)]
+    [InlineData("{{ a }} {{ b }}", 2, 5)]
+    [InlineData("{{ a }} {{ b }}", 10, 13)]
+    [InlineData("text {{ name | f(\"}}\") }} more", 7, 23)]
+    [InlineData("{{ a }}", 5, 5)]
     public void StartsSearchingAtStart(string input, int start, int expected)
     {
-        Assert.Equal(expected, LissicParser.FindTagEnd(input.AsSpan()[start..]));
+        Assert.Equal(expected, LissicParser.FindTagEnd(input.AsSpan(), start));
     }
 
     [Fact]
     public void ClosingBracesBeforeStart_AreIgnored()
     {
-        Assert.Equal(-1, LissicParser.FindTagEnd("{{ a }} b".AsSpan()[7..]));
+        Assert.Equal(-1, LissicParser.FindTagEnd("{{ a }} b".AsSpan(), 7));
     }
 
     [Theory]
@@ -159,7 +159,7 @@ public class FindTagEndTests
     [InlineData("a }}", 3)]
     public void StartAtOrNearEnd_ReturnsNotFound(string input, int start)
     {
-        Assert.Equal(-1, LissicParser.FindTagEnd(input.AsSpan()[start..]));
+        Assert.Equal(-1, LissicParser.FindTagEnd(input.AsSpan(), start));
     }
 
 
@@ -175,7 +175,7 @@ public class FindTagEndTests
     [InlineData(" branch.c [a => \"{{ x }}\"] ")]
     public void NoClosingBraces_ReturnsNotFound(string input)
     {
-        Assert.Equal(-1, LissicParser.FindTagEnd(input));
+        Assert.Equal(-1, LissicParser.FindTagEnd(input, 0));
     }
 
     [Theory]
@@ -189,6 +189,6 @@ public class FindTagEndTests
     [InlineData("\"}}")]
     public void UnclosedQuote_ReturnsNotFound(string input)
     {
-        Assert.Equal(-1, LissicParser.FindTagEnd(input));
+        Assert.Equal(-1, LissicParser.FindTagEnd(input, 0));
     }
 }
