@@ -121,7 +121,7 @@ public class TemplateCacheTests
 	}
 
 	[Fact]
-	public async Task Initialize_UnknownEntryKind_ThrowsArgumentOutOfRangeException()
+	public async Task Initialize_UnknownEntryKind_ThrowsInvalidOperationException()
 	{
 		Lissic.Parsing.TemplateCache cache = new();
 		TemplateEntry invalidEntry = new((TemplateKind)int.MaxValue, "ignored", "invalid");

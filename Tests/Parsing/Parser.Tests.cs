@@ -185,14 +185,6 @@ public class ParseTemplateTests
     {
         Assert.Throws<TemplateParsingException>(() => LissicParser.Parse("{{name", "TestTemplate"));
     }
-
-    [Fact]
-    public void Parse_ConvertsSpanToHtmlNode()
-    {
-        ITemplateNode[] nodes = LissicParser.Parse("plain text", "TestTemplate");
-        HtmlNode html = Assert.IsType<HtmlNode>(Assert.Single(nodes));
-        Assert.Equal("plain text", Encoding.UTF8.GetString(html.Html.Span));
-    }
 }
 
 

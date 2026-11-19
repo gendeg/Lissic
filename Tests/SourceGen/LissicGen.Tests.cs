@@ -508,7 +508,7 @@ public partial class WelcomeMessage { }
 
         Assert.Contains("public required VariableValue fallbackName { get; set; }", source);
     }
-/*
+
     [Theory]
     [InlineData(@"{{ branch.outer [a => branch.inner [x => name, y => part.side, _ => '{{ extra? }}'], _ => (loop.items)] }}")]
     [InlineData(@"{{ branch.outer [a => (branch.inner [x => name, y => part.side, _ => '{{ extra? }}']), _ => (loop.items)] }}")]
@@ -539,7 +539,7 @@ public partial class WelcomeMessage { }
 
         Assert.Contains(result.Diagnostics, d => d.Id == "LISSIC006" && d.GetMessage().Contains("'nope'"));
     }
-*/
+
     [Fact]
     public void ParenthesizedTags_AreDeclared()
     {
