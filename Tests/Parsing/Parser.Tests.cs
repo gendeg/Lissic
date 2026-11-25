@@ -165,6 +165,69 @@ public class ParseTemplateTests
 }
 
 
+// docs/TemplateTags.md (Name Restrictions): a tag name must be a legal C# property name.  After the first
+// character, C# identifiers allow more than letters, digits and '_': combining marks (Mn, Mc), format
+// characters (Cf) and connector punctuation (Pc).  Letter numbers (Nl) may also start a name.
+// All of these were accepted in 0.2.0 and generate compilable properties.
+public class ParseTagNameTests
+{
+    [Theory]
+    [InlineData("\u0928\u093E\u092E")]       // Hindi, with a spacing combining mark (Mc)
+    [InlineData("\u0E0A\u0E37\u0E48\u0E2D")] // Thai, with non-spacing marks (Mn)
+    [InlineData("\u0645\u064E\u0646")]       // Arabic, with a vowel mark (Mn)
+    [InlineData("e\u0301")]                  // 'e' followed by a combining acute accent (Mn)
+    [InlineData("a\u200Cb")]                 // zero width non-joiner (Cf)
+    [InlineData("a\u203Fb")]                 // undertie (Pc)
+    [InlineData("\u216B")]                   // Roman numeral twelve (Nl)
+    public void Parse_VariableNameThatIsALegalCSharpIdentifier_IsAccepted(string name)
+    {
+        VariableNode variable = Assert.IsType<VariableNode>(Assert.Single(LissicParser.Parse("{{ " + name + " }}", "TestTemplate")));
+
+        Assert.Equal(name, variable.Name);
+        Assert.True(variable.Required);
+    }
+
+    [Theory]
+    [InlineData("{{ \u0928\u093E\u092E? | upper }}", typeof(VariableNode))]
+    [InlineData("{{ part.\u0928\u093E\u092E }}", typeof(PartNode))]
+    [InlineData("{{ loop.\u0928\u093E\u092E }}", typeof(LoopNode))]
+    [InlineData("{{ branch.\u0928\u093E\u092E [a => \"A\"] }}", typeof(BranchNode))]
+    public void Parse_OtherTagsNamedWithALegalCSharpIdentifier_AreAccepted(string template, Type expected)
+    {
+        ITemplateNode node = Assert.Single(LissicParser.Parse(template, "TestTemplate"));
+
+        Assert.IsType(expected, node);
+        string name = node switch
+        {
+            VariableNode variable => variable.Name,
+            PartNode part => part.Name,
+            LoopNode loop => loop.Name,
+            BranchNode branch => branch.BranchName.ToString(),
+            _ => "",
+        };
+        Assert.Equal("\u0928\u093E\u092E", name);
+    }
+
+    // '@' lets a C# keyword be used as a property name
+    [Fact]
+    public void Parse_VerbatimIdentifierName_IsAccepted()
+    {
+        Assert.IsType<VariableNode>(Assert.Single(LissicParser.Parse("{{ @class }}", "TestTemplate")));
+    }
+
+    // Names that are not legal C# identifiers are still rejected
+    [Theory]
+    [InlineData("\u0301e")]  // a combining mark cannot start a name
+    [InlineData("\u200Cab")] // nor can a format character
+    [InlineData("1a")]
+    [InlineData("a-b")]
+    public void Parse_NameThatIsNotALegalCSharpIdentifier_Throws(string name)
+    {
+        Assert.Throws<TemplateParsingException>(() => LissicParser.Parse("{{ " + name + " }}", "TestTemplate"));
+    }
+}
+
+
 public class ParseBranchTests
 {
     private static BranchNode ParseSingleBranch(string template)
@@ -1391,5 +1454,24 @@ public class ParseMalformedTagsTests
     [InlineData("{{ name | f(\"|\")| g(\"|\" }}")]
     [InlineData("{{ branch.c [a => name|f(\"a|\"] }}")]
     public void Parse_QuotedArgContainingPipeAtEndOfTag_Throws(string template)
+        => AssertParseError(template);
+
+    // A quote in a branch key can pair with a quote in the action, which leaves the action with
+    // an opening quote that is never closed
+    [Theory]
+    [InlineData("{{ branch.status [ \"active => \" ] }}")]
+    [InlineData("{{ branch.status [ 'active => ' ] }}")]
+    [InlineData("{{branch.c[\"=>\"]}}")]
+    [InlineData("{{ branch.c [ \"=> name | f(\" ] }}")]
+    [InlineData("{{ branch.c [ '=> name | f(' ] }}")]
+    public void Parse_UnterminatedQuoteInBranchAction_Throws(string template)
+        => AssertParseError(template);
+
+    // The last character of an unterminated literal must not be dropped as if it were the closing quote
+    [Theory]
+    [InlineData("{{ branch.c [ \"a => \"bc ] }}")]
+    [InlineData("{{ branch.c [ 'a => 'bc ] }}")]
+    [InlineData("{{ branch.c [ \"a => \"bc, d => x ] }}")]
+    public void Parse_UnterminatedLiteralInBranchAction_Throws(string template)
         => AssertParseError(template);
 }

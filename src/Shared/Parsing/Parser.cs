@@ -253,7 +253,10 @@ internal static class LissicParser
             throw new TemplateParsingException($"Tag has incomplete parentheses in template: {templateName}, near position: {parseIdx}.");
 
         Tag tag = new(tagContent);
-        if (!IsValidName(tag.Name))
+        ReadOnlySpan<char> name = tag.Name;
+        if (name.Length > 0 && name[0] == '@') // Allow verbatim tag names (to fully allow all valid C# property names)
+            name = name[1..];
+        if (!IsValidName(name))
             throw new TemplateParsingException($"Invalid tag name: '{tag.Name.ToString()}' in template: {templateName}, near position: {parseIdx}.");
 
         return tag.Type switch
@@ -321,7 +324,11 @@ internal static class LissicParser
 
             idx += next;
             if (text[idx] != '}')
+            {
                 idx = SkipQuoted(text, idx);
+                if (idx == -1)
+                    return -1;
+            }
             else if (idx + 1 < text.Length && text[idx + 1] == '}')
                 return idx;
             else
@@ -342,6 +349,8 @@ internal static class LissicParser
                     return idx;
                 case '"' or '\'':
                     idx = SkipQuoted(options, idx);
+                    if (idx == -1)
+                        return -1;
                     continue;
                 case '(':
                     parens++;
@@ -365,16 +374,22 @@ internal static class LissicParser
 
     internal static bool IsValidName(ReadOnlySpan<char> name)
     {
-        if (name.Length == 0)
-            return false;
-        if (!char.IsLetter(name[0]) && name[0] != '_')
+        if (name.Length == 0 || !IsStartChar(name[0]))
             return false;
         for (int i = 1; i < name.Length; i++)
-            if (!char.IsLetterOrDigit(name[i]) && name[i] != '_')
+            if (!IsAllowedChar(name[i]))
                 return false;
 
         return true;
     }
+
+    private static bool IsStartChar(char c) => (uint)((c | 0x20) - 'a') <= 'z' - 'a' || c == '_' || (c > 0x7F && char.GetUnicodeCategory(c) is
+        UnicodeCategory.UppercaseLetter or UnicodeCategory.LowercaseLetter or UnicodeCategory.TitlecaseLetter
+        or UnicodeCategory.ModifierLetter or UnicodeCategory.OtherLetter or UnicodeCategory.LetterNumber);
+
+    private static bool IsAllowedChar(char c) => IsStartChar(c) || (uint)(c - '0') <= 9 || (c > 0x7F && char.GetUnicodeCategory(c) is
+        UnicodeCategory.DecimalDigitNumber or UnicodeCategory.ConnectorPunctuation or UnicodeCategory.NonSpacingMark
+        or UnicodeCategory.SpacingCombiningMark or UnicodeCategory.Format);
 
     private static int SkipQuoted(ReadOnlySpan<char> text, int idx)
     {
@@ -383,7 +398,7 @@ internal static class LissicParser
         {
             int close = text[(idx + 1)..].IndexOf(quote);
             if (close == -1)
-                return text.Length;
+                return -1;
 
             idx += close + 2; // Just past the closing quote
             if (idx >= text.Length || text[idx] != quote)

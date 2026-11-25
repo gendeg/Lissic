@@ -561,6 +561,59 @@ public partial class WelcomeMessage { }
         Assert.DoesNotContain("alsoNot", source);
     }
 
+    // Tag names only need to be legal C# property names (see ParseTagNameTests)
+    [Theory]
+    [InlineData("\u0928\u093E\u092E")]       // Hindi, with a spacing combining mark (Mc)
+    [InlineData("\u0E0A\u0E37\u0E48\u0E2D")] // Thai, with non-spacing marks (Mn)
+    [InlineData("e\u0301")]                  // 'e' followed by a combining acute accent (Mn)
+    [InlineData("a\u200Cb")]                 // zero width non-joiner (Cf)
+    [InlineData("a\u203Fb")]                 // undertie (Pc)
+    [InlineData("\u216B")]                   // Roman numeral twelve (Nl)
+    public void LegalCSharpIdentifierNames_AreDeclaredAndCompile(string name)
+    {
+        string template = "{{ NAME }} {{ part.NAME_part }} {{ loop.NAME_loop }} {{ branch.NAME_branch [a => \"A\"] }}".Replace("NAME", name);
+
+        Assert.Empty(RunTemplate(template).Diagnostics);
+        string source = GetTemplateSource(template);
+        Assert.Contains($"public required VariableValue {name} {{ get; set; }}", source);
+        Assert.Contains($"public required PartValue {name}_part {{ get; set; }}", source);
+        Assert.Contains($"public required LoopValue {name}_loop {{ get; set; }}", source);
+        Assert.Contains($"public required BranchValue {name}_branch {{ get; set; }}", source);
+        Assert.Empty(SnapshotRunner.GetCompilationErrors($$$"""
+{{{TemplateHeader}}}
+[TemplateText(@"{{{Escape(template)}}}")]
+public partial class WelcomeMessage { }
+"""));
+    }
+
+    [Fact]
+    public void VerbatimIdentifierName_GeneratesCompilableTemplate()
+    {
+        Assert.Empty(RunTemplate("{{ @class }}").Diagnostics);
+        Assert.Empty(SnapshotRunner.GetCompilationErrors($$$"""
+{{{TemplateHeader}}}
+[TemplateText("{{ @class }}")]
+public partial class WelcomeMessage { }
+"""));
+    }
+
+    // Formatter args are stored in a generated field named after the variable, which must not contain the '@'
+    [Fact]
+    public void VerbatimIdentifierName_WithFormatterArgs_GeneratesCompilableTemplate()
+    {
+        Assert.Empty(SnapshotRunner.GetCompilationErrors($$$"""
+{{{TemplateHeader}}}
+public class F : IVariableFormatter
+{
+    public static int Format(in VariableValue value, IBufferWriter<byte> output, ReadOnlySpan<string> args) => 0;
+}
+
+[FormattedVariable<F>("@class", ["x"])]
+[TemplateText("{{ @class }}")]
+public partial class WelcomeMessage { }
+"""));
+    }
+
 
     /* Filter diagnostics */
 
@@ -605,6 +658,7 @@ public partial class WelcomeMessage { }
     [InlineData(@"{{ Name | known | }}")]
     [InlineData(@"{{ Name | known trailing }}")]
     [InlineData(@"{{ part")]
+    [InlineData(@"{{ branch.c [ ""a => ""bc ] }}")]
     public void MalformedTemplate_ReportsErrorAndGeneratesNoTemplateSource(string template)
     {
         // Note: templates are embedded in a C# verbatim string, so "" in the InlineData becomes "" in source, which is " in the template
@@ -625,6 +679,8 @@ public partial class WelcomeMessage { }
     [InlineData(@"{{Name|known(""a""}}")]
     [InlineData(@"{{Name|known('a'}}")]
     [InlineData(@"{{ branch.c [a => Name|known(""a""] }}")]
+    [InlineData(@"{{ branch.status [ ""active => "" ] }}")]
+    [InlineData(@"{{ branch.c [ ""=> Name | known("" ] }}")]
     public void MalformedTemplate_ReportsErrorInsteadOfCrashing(string template)
     {
         GeneratorRunResult result = RunTemplate(template);
@@ -633,6 +689,26 @@ public partial class WelcomeMessage { }
         Diagnostic diagnostic = Assert.Single(result.Diagnostics, d => d.Id == "LISSIC005");
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
         Assert.Contains("WelcomeMessage", diagnostic.GetMessage());
+    }
+
+    // A crash fails the whole generator run, which drops the generated source for every template
+    [Fact]
+    public void MalformedTemplate_DoesNotPreventOtherTemplatesFromGenerating()
+    {
+        GeneratorDriver driver = SnapshotRunner.Run($$$"""
+{{{TemplateHeader}}}
+[TemplateText(@"{{ branch.status [ ""active => "" ] }}")]
+public partial class WelcomeMessage { }
+
+[TemplateText("Hello {{ Name }}")]
+public partial class OtherMessage { }
+""");
+
+        GeneratorRunResult result = driver.GetRunResult().Results[0];
+        Assert.Null(result.Exception);
+        Assert.Single(result.Diagnostics, d => d.Id == "LISSIC005");
+        Assert.Contains(result.GeneratedSources, source => source.HintName == "Lissic.OtherMessage.g.cs");
+        Assert.Contains(result.GeneratedSources, source => source.HintName == "Lissic.Manifest.g.cs");
     }
 
     // Whether empty tags are allowed is undecided, so only the generator crash is checked

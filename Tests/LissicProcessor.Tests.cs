@@ -1002,6 +1002,9 @@ public class LissicProcessorTests
 	[InlineData("{{ branch.c [a => (name) | lp_upper] }}")]
 	[InlineData("{{ branch.c [a => branch.d [x => \"X\", b => \"B\"] }}")]
 	[InlineData("{{ branch.c [a => branch.d, b => \"B\"] }}")]
+	// A quote in the key leaves an unterminated quote in the action
+	[InlineData("{{ branch.status [ \"active => \" ] }}")]
+	[InlineData("{{ branch.c [ \"a => \"bc ] }}")]
 	public async Task Initialize_InvalidSyntaxThrows(string text)
 	{
 		await Assert.ThrowsAsync<TemplateParsingException>(async () => await CreateRig(text));

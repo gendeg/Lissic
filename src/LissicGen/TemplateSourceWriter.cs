@@ -111,7 +111,7 @@ namespace {{templateRecord.Namespace}};
 
         if (formatter.Args.Length > 0)
         {
-            argsRef = $"_args_{node.Name}";
+            argsRef = $"_args_{node.Name.TrimStart('@')}"; // field name can't contain the '@' of a verbatim identifier
             argField = $"    private static readonly string[] {argsRef} = [{formatter.ArgsToString()}];";
         }
 
