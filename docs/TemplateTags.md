@@ -32,11 +32,11 @@ All tags open with "`{{`" and close with "`}}`".  Variable tags only need to con
 
 ##### Name Restrictions
 
-Tag names must be a legal C# property name.  Tag names must be unique, including across different tag types, and must not use a reserved name (see below).  However, the same tag can be used multiple times.  For example, you cannot have `{{ foo }}` and `{{ part.foo }}` in the same template, but `{{ foo }}` can be used as many times as is necessary to insert the same value.
+Tag names must be a legal C# property name (verbatim names starting with `@` are allowed).  Tag names must be unique, including across different tag types, and must not use a reserved name (see below).  However, the same tag can be used multiple times.  For example, you cannot have `{{ foo }}` and `{{ part.foo }}` in the same template, but `{{ foo }}` can be used as many times as is necessary to insert the same value.  A verbatim names will collide with the same name in non-verbatim form (e.g. `@foo` and `foo` will collide).
 
 ##### Optional Parentheses
 
-Parentheses can be used to enclose tags.  This option is only valid when an entire tag, including any options or filters, are enclosed.  Parentheses can be used to enclose tags inside of branch options.  This can be useful when options may otherwise be difficult to distinguish (e.g. `{{ branch.status [(member => name | upper | append(", member")), _ => ("not a member") ] }}`)
+Parentheses can be used to enclose tags.  This option is only valid when an entire tag, including any options or filters, are enclosed.  Parentheses can be used to enclose tags inside of branch options.  This can be useful when options may otherwise be difficult to distinguish (e.g. `{{ branch.status [ member => (name | upper | append(", member")), _ => ("not a member") ] }}`)
 
 The following are valid:
 - `{{ (var | filter) }}`
@@ -104,7 +104,7 @@ In the parent template, the branch is assigned a text key value.  The key value 
 
 ##### Branch Options
 
-Branch options are a list of mappings between a key value and an action.  Actions can be any of the tag types, except other branches, or a literal text string.
+Branch options are a list of mappings between a key value and an action.  Actions can be any of the tag types or a literal text string.
 
 Options are formatted as `key=>action` (e.g. `{{ branch.isLoggedIn [True=>name, False=>part.logInLink] }}`).   Any number of key/action pairs can be included in a branch (e.g. `{{ switch.fruitType [apple=>part.apple, banana=>part.banana, cantaloupe=>part.cantaloupe, ...] }}`).
 
@@ -143,15 +143,15 @@ To mark an individual tag as optional, add a `?` after the tag name (e.g. `{{ ph
 
 ##### Whitespace
 
-Lissic allows whitespace in most places inside tags, with one exception: there cannot be any space before or after the `.` that connects a tag type to a tag name
+Lissic allows whitespace in most places inside tags, with two exceptions: there cannot be any space before or after the `.` that connects a tag type to a tag name AND there cannot be whitespace before an `?` for optional tags
 
 
 All of the following are valid tags:
 ```
 {{ myVar }}
 {{ myVar | filter }}
-{{ myVar | filter( "arg1" , "arg2" ) | filter2 }}
-{{myVar|filter(
+{{ myVar? | filter( "arg1" , "arg2" ) | filter2 }}
+{{myVar?|filter(
     "arg1", 
     "arg2"
 )}}
@@ -159,7 +159,7 @@ All of the following are valid tags:
 {{ part.myPart }}
 {{ loop.myLoop }}
 {{ branch.myBranch [ key1 => action , key2 => action2 , key3 => "literal text" ] }}
-{{branch.myBranch[
+{{branch.myBranch?[
     key1 => action,
     key2 => action2,
     key3 => "literal text"
@@ -169,6 +169,8 @@ All of the following are ***not*** valid:
 ```
 {{part .myPart}}
 {{part. myPart}}
+{{ myVar ? }}
+{{ part.myPart ? }}
 ```
 
 ##### Case Sensitivity

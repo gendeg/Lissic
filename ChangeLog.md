@@ -1,3 +1,23 @@
+#### Version 0.3.0 (2026-Nov-24)
+
+- BREAKING: Old deprecated syntax is removed
+- Branches can now use other branches as direct actions (e.g. `{{ branch.name [key => branch.subBranch [subKey => output] ] }}`).  Previously, this was only possible through string literals.
+- Filter names must now be valid C# identifiers (no verbatim identifiers, i.e. starting with `@`)
+- New diagnostic, `LISSIC010`, will trigger for invalid filter names, including empty or null names
+- `LISSIC009` (Deprecated Syntax) is no longer used, but will be kept for future use
+- Parser has been completely rewritten, the following now appropriately throw TemplateParsingException:
+  - `|` with no filter following it (e.g. `{{ var | }}`)
+  - Whitespace is not allowed before `?` in optional tags
+  - Malformed branch options are now errors instead of being silently dropped
+  - Invalid tag names (i.e. invalid C# identifiers) now throw
+  - Unknown filters with invalid names are now an error
+- New parser improves parsing speed and reduces allocations
+- FilterRegistry.Register now throws ArgumentException for empty or invalid names
+- Number arguments for filters now use invariant culture
+- Tag names, including the command type and whitespace, must be less than 65,536 characters
+- Known Issue: "@name" and "name" tags collide, if both are used in the same template
+
+
 #### Version 0.2.0 (2026-Nov-17)
 
 - BREAKING: Multiple changes to Lissic syntax, old syntax is deprecated and will be removed in 0.3.0

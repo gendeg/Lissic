@@ -57,7 +57,11 @@ The `TemplateCache` class has a `ReloadPathTemplates` method to reload file-base
 
 ##### LISSIC009 - DeprecatedSyntax
 
-*Warning* - A template uses deprecated syntax.  The warning will give details on what is deprecated.
+*Warning* - A template uses deprecated syntax.  The warning will give details on what is deprecated. **not currently used**
+
+##### LISSIC010 - InvalidFilterName
+
+*Error* - A custom filter uses an invalid filter name.  Filter names must follow C# identifier rules (verbatim identifiers are not allowed).
 
 ---
 
@@ -76,7 +80,7 @@ This should only be possible inside formatters, so custom formatters should pree
 ##### TemplateRenderException
 
 `TemplateRenderException` notes a critical problem during template rendering.  This exception will only be thrown under the following circumstances:
-- `UnknownTagDebugMode` is set to `ThrowException`, and an empty tag value is encountered (Excpetion: )
+- `UnknownTagDebugMode` is set to `ThrowException`, and an empty tag value is encountered
 - `UnknownBranchKeyDebugMode` is set to `ThrowException`, and an unknown key is encountered and no default options is given
 - `EnableCycleDetection` is enabled and a cycle is detected
 - `RecursionDepthLimit` is exceeded
